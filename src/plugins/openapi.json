@@ -1,0 +1,216 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "V3rify API",
+    "description": "V3rify API Documentation",
+    "version": "1.0.0"
+  },
+  "definitions": {},
+  "paths": {
+    "/": {
+      "get": {
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "hello": {
+                  "type": "string"
+                }
+              },
+              "required": ["hello"]
+            }
+          }
+        }
+      }
+    },
+    "/auth/merchant/register": {
+      "post": {
+        "summary": "Register a new user",
+        "description": "Register a new user, the type can be either 'username' or 'wallet'\n\nIf the type is 'username' then the username and password fields are required",
+        "tags": ["auth"],
+        "produces": ["application/json"],
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "required": ["type"],
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": ["username"]
+                },
+                "username": {
+                  "type": "string"
+                },
+                "password": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "type": {
+                  "type": "string",
+                  "enum": ["username"]
+                }
+              },
+              "required": ["id", "type"]
+            }
+          }
+        }
+      }
+    },
+    "/auth/merchant/username-available": {
+      "get": {
+        "summary": "Check if username is available",
+        "description": "Check if username is available, returns true if available, false if not",
+        "tags": ["auth"],
+        "produces": ["application/json"],
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "in": "query",
+            "name": "username"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        }
+      }
+    },
+    "/auth/merchant/username-login": {
+      "post": {
+        "summary": "Login with a username",
+        "description": "Login with a username",
+        "tags": ["auth"],
+        "produces": ["application/json"],
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "required": ["username", "password"],
+              "type": "object",
+              "properties": {
+                "username": {
+                  "type": "string"
+                },
+                "password": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "token": {
+                  "type": "string"
+                }
+              },
+              "required": ["id", "token"]
+            }
+          }
+        }
+      }
+    },
+    "/auth/merchant/wallet-login": {
+      "post": {
+        "summary": "Login with a wallet",
+        "description": "Login with a wallet",
+        "tags": ["auth"],
+        "produces": ["application/json"],
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "signature": {
+                  "type": "string"
+                },
+                "address": {
+                  "type": "string"
+                },
+                "message": {
+                  "type": "string"
+                }
+              },
+              "required": ["signature", "address", "message"]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "token": {
+                  "type": "string"
+                }
+              },
+              "required": ["id", "token"]
+            }
+          }
+        }
+      }
+    }
+  },
+  "host": "127.0.0.1:5050",
+  "schemes": ["http"],
+  "consumes": ["application/json"],
+  "produces": ["application/json"],
+  "securityDefinitions": {
+    "apiKey": {
+      "type": "apiKey",
+      "name": "Authorization",
+      "in": "header"
+    }
+  },
+  "tags": [
+    {
+      "name": "auth",
+      "description": "Authentication related end-points"
+    },
+    {
+      "name": "users",
+      "description": "Users related end-points"
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "typescript.tsdk": "node_modules/typescript/lib",
+  // add prettier config path
+  "prettier.configPath": ".prettierrc.cjs",
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  "typescript.preferences.importModuleSpecifier": "relative",
+  // exclude build folder
+  "files.exclude": {
+    "build": true
+  },
+}

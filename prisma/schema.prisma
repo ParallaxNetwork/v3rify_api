@@ -1,0 +1,196 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==================== User ====================
+model User {
+  id              String    @id @default(uuid())
+  name            String?
+  ensName         String?
+  email           String?   
+  
+  roles           UserRole[]
+
+  perkUsages      MerchantPerkUsage[]
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model UserRole {
+  id              String    @id @default(uuid())
+
+  userId          String    
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+// ==================== User End ====================
+
+// ==================== Merchant ====================
+model Merchant {
+  id              String          @id @default(uuid())
+  username        String?         @unique
+  passwordHash    String?
+  walletAddress   String?         @unique
+  type            String          
+
+  shops           MerchantShop[]
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model MerchantWhitelist {
+  id              String    @id @default(uuid())
+  type            String    @default("wallet")
+  value           String
+}
+
+model MerchantShop {
+  id              String    @id @default(uuid())
+  name            String
+  address         String
+  description     String?
+  phoneNumber     String
+  email           String
+  image           String?
+
+  merchantUserId  String    
+  merchant        Merchant  @relation(fields: [merchantUserId], references: [id], onDelete: Cascade)
+  perks           MerchantPerk[]  
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model MerchantPerk {
+  id              String    @id @default(uuid())
+  name            String    
+  description     String
+  image           String
+
+  startPeriod     DateTime
+  endPeriod       DateTime
+
+  claimQuota        Int
+  claimPeriod       Int       @default(1)
+  claimPeriodUnit   String    @default("day")
+  claimPeriodLimit  Int       @default(1)
+
+  paymentMinimum  Int       @default(0)
+  paymentUnit     String    @default("IDR")
+  discountMaximum Int       @default(0)
+  discountUnit    String    @default("IDR")
+
+  shopId          String
+  shop            MerchantShop  @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  requirements    MerchantPerkRequirement[]
+  benefits        MerchantPerkBenefit[]
+  usages          MerchantPerkUsage[]
+
+  isActive        Boolean   @default(true)
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model MerchantPerkRequirement {
+  id                String        @id @default(uuid())
+  chain             String        @default("ethereum")
+  minimumBalance    Int           @default(1)
+  customConditions  MerchantPerkCustomCondition[] 
+
+  perkId            String    
+  perk              MerchantPerk  @relation(fields: [perkId], references: [id], onDelete: Cascade)
+  nftAddress        String
+  nftCollection     NftCollection @relation(fields: [nftAddress], references: [address], onDelete: Cascade)
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model MerchantPerkCustomCondition {
+  id              String    @id @default(uuid())
+  type            String    @default("balance")
+  properties      Json     
+
+  perkId          String
+  perk            MerchantPerkRequirement  @relation(fields: [perkId], references: [id], onDelete: Cascade)
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model MerchantPerkBenefit {
+  id              String    @id @default(uuid())
+  type            String    @default("discount")
+  value           Int       @default(0)
+  valueUnit       String    @default("percent")
+
+  perkId          String
+  perk            MerchantPerk  @relation(fields: [perkId], references: [id], onDelete: Cascade)
+  usages          MerchantPerkUsage[]
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model MerchantPerkUsage {
+  id              String    @id @default(uuid())
+  value           Int       @default(0)
+  valueUnit       String    @default("percent")
+  nftIds          String[]  @default([])
+
+  paymentTotal    Int       @default(0)
+  paymentUnit     String    @default("IDR")
+  perkValue       Int       @default(0)
+  perkValueUnit   String    @default("IDR")
+
+  perkId          String
+  perk            MerchantPerk  @relation(fields: [perkId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  benefitId       String
+  benefit         MerchantPerkBenefit  @relation(fields: [benefitId], references: [id], onDelete: Cascade)
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model NftCollection {
+  id              String    @default(uuid())
+  address         String    @unique
+  contractType    String    @default("ERC721")
+  chain           String    @default("ethereum")
+  name            String
+  symbol          String
+
+  perkRequirements MerchantPerkRequirement[]
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@id([address, chain])
+}
+// ==================== Merchant End ====================
+
+// ==================== Common ====================
+model UploadedFile {
+  id              String    @id @default(uuid())
+  path            String    @unique
+  type            String
+  url             String
+
+  userId          String
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+// ==================== Common End ====================

@@ -1,0 +1,82 @@
+{
+  "name": "v3rify-api",
+  "version": "1.0.0",
+  "description": "v3rify",
+  "type": "module",
+  "scripts": {
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "check:types": "tsc --noEmit",
+    "build": "esbuild `find src \\( -name '*.ts' \\)` --platform=node --outdir=build --resolve-extensions=.js && cpy 'src/**/*.svg' 'build'",
+    "build:docker:prod": "docker build . -t my-fastify-app --build-arg APP_ENV=production",
+    "start": "node build",
+    "dev": "tsx watch src .env | pino-pretty --colorize",
+    "pretest": "npm run build",
+    "test": "vitest",
+    "test:watch": "vitest -w",
+    "migrate": "prisma migrate dev --name init",
+    "prisma-generate": "prisma generate"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yonathan06/fastify-typescript-starter.git"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "keywords": [
+    "nodejs",
+    "fastify",
+    "typescript"
+  ],
+  "author": "Yonatan Bendahan",
+  "license": "MIT",
+  "homepage": "https://v3rify.io",
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.363.0",
+    "@fastify/cors": "^8.3.0",
+    "@fastify/formbody": "^7.4.0",
+    "@fastify/helmet": "^11.0.0",
+    "@fastify/multipart": "^7.7.0",
+    "@fastify/one-line-logger": "^1.2.0",
+    "@fastify/swagger": "^8.6.0",
+    "@fastify/swagger-ui": "^1.9.2",
+    "@fastify/type-provider-typebox": "^3.2.0",
+    "@prisma/client": "^4.16.2",
+    "@sinclair/typebox": "^0.28.20",
+    "@types/bcrypt": "^5.0.0",
+    "@types/jsonwebtoken": "^9.0.2",
+    "ajv": "^8.11.2",
+    "bcrypt": "^5.1.0",
+    "dotenv": "^16.0.3",
+    "env-schema": "^5.1.1",
+    "fabric": "^5.3.0",
+    "fastify": "^4.10.2",
+    "fastify-plugin": "^3.0.1",
+    "jsonwebtoken": "^9.0.0",
+    "nanoid": "^4.0.2",
+    "sequelize": "^6.32.1",
+    "sequelize-typescript": "^2.1.5",
+    "sharp": "^0.32.1",
+    "siwe": "^2.1.4",
+    "validator": "^13.9.0",
+    "web3": "^4.0.2",
+    "web3-validator": "^1.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^18.11.15",
+    "@typescript-eslint/eslint-plugin": "^5.45.0",
+    "@typescript-eslint/parser": "^5.45.0",
+    "cpy-cli": "^5.0.0",
+    "esbuild": "^0.14.54",
+    "eslint": "^8.28.0",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-plugin-prettier": "^4.2.1",
+    "pino-pretty": "^8.1.0",
+    "prettier": "^2.8.0",
+    "prisma": "^4.16.2",
+    "tsx": "^3.12.1",
+    "typescript": "^4.9.3",
+    "vitest": "^0.25.8"
+  }
+}

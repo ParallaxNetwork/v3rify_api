@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "lib": ["esnext"],
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "sourceMap": true,
+    "outDir": "build",
+    "baseUrl": "./src",
+    "skipLibCheck": true,
+    // "strict": true,
+    "paths": {
+      "types/*": ["./@types/*"]
+    },
+  },
+  "include": [
+    "src/**/*.ts", 
+    "src/**/*.svg",
+    "tests/**/*.ts"
+  ],
+  "exclude": ["node_modules", "./src/temp/**/*"],
+}
