@@ -40,6 +40,8 @@ const ConfigSchema = Type.Strict(
     S3_SECRET_ACCESS_KEY: Type.String(),
     S3_BUCKET_NAME: Type.String(),
     S3_BUCKET_REGION: Type.String(),
+    // API Key
+    ALCHEMY_API_KEY: Type.String(),
   }),
 );
 

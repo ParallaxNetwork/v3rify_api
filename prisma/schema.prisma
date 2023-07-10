@@ -84,10 +84,10 @@ model MerchantPerk {
   claimPeriodUnit   String    @default("day")
   claimPeriodLimit  Int       @default(1)
 
-  paymentMinimum  Int       @default(0)
-  paymentUnit     String    @default("IDR")
-  discountMaximum Int       @default(0)
-  discountUnit    String    @default("IDR")
+  // paymentMinimum  Int       @default(0)
+  // paymentUnit     String    @default("IDR")
+  // discountMaximum Int       @default(0)
+  // discountUnit    String    @default("IDR")
 
   shopId          String
   shop            MerchantShop  @relation(fields: [shopId], references: [id], onDelete: Cascade)
@@ -167,10 +167,14 @@ model MerchantPerkUsage {
 model NftCollection {
   id              String    @default(uuid())
   address         String    @unique
-  contractType    String    @default("ERC721")
+  tokenType       String    @default("ERC721")
   chain           String    @default("ethereum")
   name            String
   symbol          String
+  description     String?
+  image           String?
+  opensea         Json
+  rarity          Json
 
   perkRequirements MerchantPerkRequirement[]
 
