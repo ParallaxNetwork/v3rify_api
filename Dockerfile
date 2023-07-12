@@ -3,22 +3,22 @@ FROM node:18-alpine AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 COPY package.json package-lock.json ./
+COPY .env .env   
 RUN npm install
 
 FROM node:18-alpine AS builder
-ARG APP_ENV
+ENV APP_ENV=development 
 WORKDIR /app
 COPY . .
-COPY .env.$APP_ENV .env
 COPY --from=deps /app/node_modules ./node_modules
 RUN npm run build
 
 FROM node:18-alpine AS runner
 WORKDIR /usr/app
-ARG APP_ENV
+ENV APP_ENV=development 
 COPY --from=builder /app/build ./build
 COPY package.json ./
-COPY .env.$APP_ENV .env
+COPY .env .env  
 RUN npm install --prod
 USER node
 ENV NODE_ENV="production"
