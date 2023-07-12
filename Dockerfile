@@ -24,4 +24,7 @@ RUN npm install -g pnpm
 RUN pnpm install --prod
 USER node
 ENV NODE_ENV="production"
+
+EXPOSE 4100
+
 CMD ["npm", "start"]
