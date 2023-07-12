@@ -1,11 +1,12 @@
 import { Type } from '@sinclair/typebox';
 import { FastifyPluginAsync, FastifyReply, FastifyRequest } from 'fastify';
-import { ErrorSchema } from '../../typebox/common';
-import { authenticate } from '../../middleware/auth';
 import { isAddress } from 'web3-validator';
-import { alchemyClient } from '../../utils/alchemy';
-import { prismaClient } from '../../prisma';
-import { manyMinutesAgo } from '../../utils/dateUtils';
+
+import { ErrorSchema } from '../../typebox/common.js';
+import { authenticate } from '../../middleware/auth.js';
+import { alchemyClient } from '../../utils/alchemy/index.js';
+import { prismaClient } from '../../prisma/index.js';
+import { manyMinutesAgo } from '../../utils/dateUtils.js';
 
 const nftRoutes: FastifyPluginAsync = async (server) => {
   server.get(
