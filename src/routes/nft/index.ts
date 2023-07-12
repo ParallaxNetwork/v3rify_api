@@ -93,6 +93,14 @@ const nftRoutes: FastifyPluginAsync = async (server) => {
         }
 
         const collectionMetadata = await alchemyClient(chain).nft.getContractMetadata(id);
+        if(collectionMetadata.tokenType !== 'ERC721') {
+          return reply.code(400).send({
+            code: 'invalid_collection',
+            error: 'Bad Request',
+            message: 'Invalid collection',
+          });
+        }
+
         const collectionAttributesSummary = await alchemyClient(chain).nft.summarizeNftAttributes(id);
 
         const metadata = await prismaClient.nftCollection.upsert({
