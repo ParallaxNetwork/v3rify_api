@@ -25,6 +25,6 @@ RUN pnpm install --prod
 USER node
 ENV NODE_ENV="production"
 
-EXPOSE 4100
+# EXPOSE 4100
 
 CMD ["npm", "start"]
