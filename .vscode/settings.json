@@ -9,6 +9,6 @@
   "typescript.preferences.importModuleSpecifier": "relative",
   // exclude build folder
   "files.exclude": {
-    "build": true
+    // "build": true
   },
 }
