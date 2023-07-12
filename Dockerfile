@@ -17,7 +17,7 @@ WORKDIR /usr/app
 ENV APP_ENV=development 
 COPY --from=builder /app/build ./build
 COPY package.json ./
-COPY .env .env  
+COPY . .
 RUN npm install --prod
 USER node
 ENV NODE_ENV="production"
