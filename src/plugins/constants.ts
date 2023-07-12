@@ -10,7 +10,7 @@ const FASTIFY_SWAGGER_PLUGIN_CONFIG: SwaggerOptions = {
     },
     swagger: '2.2',
     host: `${process.env.BASE_URL}`,
-    schemes: ['http'],
+    schemes: ['https', 'http'],
     consumes: ['application/json'],
     produces: ['application/json'],
     tags: [
