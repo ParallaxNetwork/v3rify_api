@@ -1,5 +1,5 @@
-import { infuraGetNftsFromCollection } from '../../utils/infura/infuraNft';
-import { convertChainStringToId } from '../../utils/miscUtils';
+import { infuraGetNftsFromCollection } from '../../utils/infura/infuraNft.js';
+import { convertChainStringToId } from '../../utils/miscUtils.js';
 
 export const infuraGetAllNfts = async (address: string, chain: string): Promise<InfuraAssetsModel[]> => {
   try {
