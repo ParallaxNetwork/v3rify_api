@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Nft" ALTER COLUMN "name" DROP NOT NULL,
+ALTER COLUMN "attributes" DROP NOT NULL;

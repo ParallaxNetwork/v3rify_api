@@ -7,6 +7,7 @@ import { authenticate } from '../../middleware/auth.js';
 import { alchemyClient } from '../../utils/alchemy/index.js';
 import { prismaClient } from '../../prisma/index.js';
 import { manyMinutesAgo } from '../../utils/dateUtils.js';
+import { infuraGetAllNfts, summarizeNftAttributes } from './helpers.js';
 
 const nftRoutes: FastifyPluginAsync = async (server) => {
   server.get(
@@ -25,6 +26,7 @@ const nftRoutes: FastifyPluginAsync = async (server) => {
         }),
         response: {
           200: Type.Object({
+            address: Type.String(),
             name: Type.String(),
             symbol: Type.String(),
             tokenType: Type.String(),
@@ -87,21 +89,25 @@ const nftRoutes: FastifyPluginAsync = async (server) => {
 
         if (existing) {
           // if data is updated within 15 minutes, return existing
-          if (existing.updatedAt > manyMinutesAgo(15)) {
+          // if (existing.updatedAt > manyMinutesAgo(15)) {
             return reply.code(200).send(existing);
-          }
+          // }
         }
 
         const collectionMetadata = await alchemyClient(chain).nft.getContractMetadata(id);
-        if(collectionMetadata.tokenType !== 'ERC721') {
+        if (collectionMetadata.tokenType !== 'ERC721') {
           return reply.code(400).send({
             code: 'invalid_collection',
             error: 'Bad Request',
-            message: 'Invalid collection',
+            message: 'Invalid collection. Make sure you are inputting the right network and collection address.',
           });
         }
 
-        const collectionAttributesSummary = await alchemyClient(chain).nft.summarizeNftAttributes(id);
+        // const collectionAttributesSummary = await alchemyClient(chain).nft.summarizeNftAttributes(id);
+
+        // get all nfts
+        const allNfts = await infuraGetAllNfts(id, chain);
+        const collectionAttributesSummary = summarizeNftAttributes(allNfts);
 
         const metadata = await prismaClient.nftCollection.upsert({
           where: {
@@ -130,6 +136,30 @@ const nftRoutes: FastifyPluginAsync = async (server) => {
             rarity: { ...collectionAttributesSummary },
           },
         });
+
+        for (let i = 0; i < allNfts.length; i++) {
+          await prismaClient.nft.upsert({
+            create: {
+              tokenId: allNfts[i].tokenId,
+              chain: chain,
+              type: allNfts[i].type,
+              name: allNfts[i].metadata.name,
+              attributes: allNfts[i].metadata.attributes,
+              collectionAddress: id,
+            },
+            update: {
+              name: allNfts[i].metadata.name,
+              attributes: allNfts[i].metadata.attributes,
+            },
+            where: {
+              tokenId_chain_collectionAddress: {
+                chain: chain,
+                tokenId: allNfts[i].tokenId,
+                collectionAddress: id,
+              },
+            },
+          });
+        }
 
         return reply.code(200).send(metadata);
       } catch (error) {

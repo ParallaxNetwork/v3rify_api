@@ -19,7 +19,7 @@ model User {
   
   roles           UserRole[]
 
-  perkUsages      MerchantPerkUsage[]
+  campaignUsages      MerchantCampaignUsage[]
 
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
@@ -64,13 +64,13 @@ model MerchantShop {
 
   merchantUserId  String    
   merchant        Merchant  @relation(fields: [merchantUserId], references: [id], onDelete: Cascade)
-  perks           MerchantPerk[]  
+  campaigns       MerchantCampaign[]  
 
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 }
 
-model MerchantPerk {
+model MerchantCampaign {
   id              String    @id @default(uuid())
   name            String    
   description     String
@@ -91,9 +91,9 @@ model MerchantPerk {
 
   shopId          String
   shop            MerchantShop  @relation(fields: [shopId], references: [id], onDelete: Cascade)
-  requirements    MerchantPerkRequirement[]
-  benefits        MerchantPerkBenefit[]
-  usages          MerchantPerkUsage[]
+  requirements    MerchantCampaignRequirement[]
+  benefits        MerchantCampaignBenefit[]
+  usages          MerchantCampaignUsage[]
 
   isActive        Boolean   @default(true)
 
@@ -101,14 +101,14 @@ model MerchantPerk {
   updatedAt  DateTime @updatedAt
 }
 
-model MerchantPerkRequirement {
+model MerchantCampaignRequirement {
   id                String        @id @default(uuid())
   chain             String        @default("ethereum")
   minimumBalance    Int           @default(1)
-  customConditions  MerchantPerkCustomCondition[] 
+  customConditions  MerchantCampaignCustomCondition[] 
 
-  perkId            String    
-  perk              MerchantPerk  @relation(fields: [perkId], references: [id], onDelete: Cascade)
+  campaignId            String    
+  campaign              MerchantCampaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
   nftAddress        String
   nftCollection     NftCollection @relation(fields: [nftAddress], references: [address], onDelete: Cascade)
 
@@ -116,33 +116,33 @@ model MerchantPerkRequirement {
   updatedAt  DateTime @updatedAt
 }
 
-model MerchantPerkCustomCondition {
+model MerchantCampaignCustomCondition {
   id              String    @id @default(uuid())
   type            String    @default("balance")
   properties      Json     
 
-  perkId          String
-  perk            MerchantPerkRequirement  @relation(fields: [perkId], references: [id], onDelete: Cascade)
+  campaignId          String
+  campaign            MerchantCampaignRequirement  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
 
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 }
 
-model MerchantPerkBenefit {
+model MerchantCampaignBenefit {
   id              String    @id @default(uuid())
   type            String    @default("discount")
   value           Int       @default(0)
   valueUnit       String    @default("percent")
 
-  perkId          String
-  perk            MerchantPerk  @relation(fields: [perkId], references: [id], onDelete: Cascade)
-  usages          MerchantPerkUsage[]
+  campaignId          String
+  campaign            MerchantCampaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  usages          MerchantCampaignUsage[]
 
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 }
 
-model MerchantPerkUsage {
+model MerchantCampaignUsage {
   id              String    @id @default(uuid())
   value           Int       @default(0)
   valueUnit       String    @default("percent")
@@ -150,15 +150,15 @@ model MerchantPerkUsage {
 
   paymentTotal    Int       @default(0)
   paymentUnit     String    @default("IDR")
-  perkValue       Int       @default(0)
-  perkValueUnit   String    @default("IDR")
+  campaignValue       Int       @default(0)
+  campaignValueUnit   String    @default("IDR")
 
-  perkId          String
-  perk            MerchantPerk  @relation(fields: [perkId], references: [id], onDelete: Cascade)
+  campaignId          String
+  campaign            MerchantCampaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
   userId          String
   user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   benefitId       String
-  benefit         MerchantPerkBenefit  @relation(fields: [benefitId], references: [id], onDelete: Cascade)
+  benefit         MerchantCampaignBenefit  @relation(fields: [benefitId], references: [id], onDelete: Cascade)
 
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
@@ -176,12 +176,27 @@ model NftCollection {
   opensea         Json
   rarity          Json
 
-  perkRequirements MerchantPerkRequirement[]
+  campaignRequirements MerchantCampaignRequirement[]
+  nfts                Nft[]
 
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
   @@id([address, chain])
+}
+
+model Nft {
+  id            String    @default(uuid())
+  chain         String    @default("ethereum")
+  tokenId       String    
+  type          String    @default("ERC721")
+  name          String?
+  attributes    Json?
+
+  collectionAddress   String 
+  collection          NftCollection @relation(fields: [collectionAddress], references: [address], onDelete: Cascade)
+
+  @@id([tokenId, chain, collectionAddress])
 }
 // ==================== Merchant End ====================
 
