@@ -41,9 +41,9 @@ const uploadRoutes: FastifyPluginAsync = async (server) => {
     },
     async (request: FastifyRequest, reply: FastifyReply) => {
       try {
-        const uploadType = ['shop-image'];
-        // access form data
+        const uploadType = ['shop-image', 'campaign-image'];
 
+        // access form data
         const { targetId: _targetId, type: _type, file } = request.body as { targetId: any; type: any; file: MultipartFile };
         const targetId = _targetId.value
         const type = _type.value
@@ -94,6 +94,45 @@ const uploadRoutes: FastifyPluginAsync = async (server) => {
           });
 
           console.log('fileUrl', fileUrl);
+
+          return reply.status(200).send(fileUrl);
+        }
+        else if (type === 'campaign-image') {
+          const campaign = await prismaClient.merchantCampaign.findUnique({
+            where: {
+              id: targetId
+            },
+            include: {
+              shop: true
+            }
+          })
+
+          if (!campaign) {
+            reply.code(400).send({
+              code: 'invalid-target-id',
+              error: 'Bad Request',
+              message: 'Invalid target id',
+            });
+          }
+
+          if (campaign.shop.merchantUserId !== request.user.id) {
+            reply.code(400).send({
+              code: 'unauthorized',
+              error: 'Bad Request',
+              message: 'Unauthorized to upload image for this campaign',
+            });
+          }
+
+          const fileExtension = file.mimetype.split('/')[1];
+          console.log('fileExtension', fileExtension);
+
+          const fileUrl = await uploadFileToBucket({
+            file: await file.toBuffer(),
+            path: `shop/${campaign.shop.id}/campaign/${targetId}/campaign_image.${fileExtension}`,
+            acl: 'public-read',
+            type: 'image-campaign',
+            userId: request.user.id,
+          });
 
           return reply.status(200).send(fileUrl);
         }

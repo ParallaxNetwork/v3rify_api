@@ -9,7 +9,7 @@
     "sourceMap": true,
     "outDir": "build",
     "baseUrl": "./src",
-    "skipLibCheck": true,
+    // "skipLibCheck": true,
     // "strict": true,
     "paths": {
       "types/*": ["./@types/*"]

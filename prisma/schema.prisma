@@ -74,15 +74,14 @@ model MerchantCampaign {
   id              String    @id @default(uuid())
   name            String    
   description     String
-  image           String
+  image           String?
 
   startPeriod     DateTime
   endPeriod       DateTime
 
-  claimQuota        Int
-  claimPeriod       Int       @default(1)
-  claimPeriodUnit   String    @default("day")
-  claimPeriodLimit  Int       @default(1)
+  totalQuota        Int?       @default(0) 
+  perUserQuota      Int?       @default(0)
+  perUserDailyQuota Int?       @default(0)
 
   // paymentMinimum  Int       @default(0)
   // paymentUnit     String    @default("IDR")
