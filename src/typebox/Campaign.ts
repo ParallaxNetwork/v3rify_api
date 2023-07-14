@@ -35,8 +35,8 @@ export const CampaignCreateRequestSchema = Type.Object({
   image: Type.Optional(Type.String()),
 
   requirementOperator: Type.Union([Type.Literal('and'), Type.Literal('or')]),
-  requirement: Type.Array(CampaignRequirementItem),
-  benefit: Type.Array(CampaignBenefitItem),
+  requirements: Type.Array(CampaignRequirementItem),
+  benefits: Type.Array(CampaignBenefitItem),
 
   startDate: Type.Number(),
   endDate: Type.Number(),
@@ -46,4 +46,10 @@ export const CampaignCreateRequestSchema = Type.Object({
   perUserDailyQuota: Type.Union([Type.Number(), Type.Null()]),
 
   shopId: Type.String(),
+});
+
+
+export const CampaignSchema = Type.Object({
+  ...CampaignCreateRequestSchema.properties,
+  id: Type.String(),
 });

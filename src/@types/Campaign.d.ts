@@ -33,8 +33,8 @@ declare interface CampaignCreateRequest {
   image: string;
 
   requirementOperator: 'and' | 'or';
-  requirement: CampaignRequirementItem[];
-  benefit: CampaignBenefitItem[];
+  requirements: CampaignRequirementItem[];
+  benefits: CampaignBenefitItem[];
 
   startDate: number;
   endDate: number;

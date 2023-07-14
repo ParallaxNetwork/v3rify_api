@@ -79,6 +79,8 @@ model MerchantCampaign {
   startPeriod     DateTime
   endPeriod       DateTime
 
+  requirementOperator   String    @default("or")
+
   totalQuota        Int?       @default(0) 
   perUserQuota      Int?       @default(0)
   perUserDailyQuota Int?       @default(0)
@@ -102,14 +104,14 @@ model MerchantCampaign {
 
 model MerchantCampaignRequirement {
   id                String        @id @default(uuid())
-  chain             String        @default("ethereum")
-  minimumBalance    Int           @default(1)
+  network           String        @default("ethereum")
+  minimumHold       Int           @default(1)
   customConditions  MerchantCampaignCustomCondition[] 
 
   campaignId            String    
   campaign              MerchantCampaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
-  nftAddress        String
-  nftCollection     NftCollection @relation(fields: [nftAddress], references: [address], onDelete: Cascade)
+  contractAddress       String
+  nftCollection         NftCollection @relation(fields: [contractAddress], references: [address], onDelete: Cascade)
 
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
@@ -129,12 +131,12 @@ model MerchantCampaignCustomCondition {
 
 model MerchantCampaignBenefit {
   id              String    @id @default(uuid())
-  type            String    @default("discount")
-  value           Int       @default(0)
-  valueUnit       String    @default("percent")
+  type            String    
+  value           String    
+  description     String?
 
-  campaignId          String
-  campaign            MerchantCampaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  campaignId      String
+  campaign        MerchantCampaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
   usages          MerchantCampaignUsage[]
 
   createdAt  DateTime @default(now())

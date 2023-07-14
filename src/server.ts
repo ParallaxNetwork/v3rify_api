@@ -4,6 +4,7 @@ import { Type, TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import config from './plugins/config.js';
 import routes from './routes/index.js';
 import * as fastifyMultipart from '@fastify/multipart';
+import { campaignWorker } from './workers/campaignWorkers.js';
 
 const server = fastify({
   ajv: {
@@ -29,6 +30,9 @@ await server.register(config);
 if(process.env.BACKEND_MODE === 'api' || process.env.BACKEND_MODE === 'both'){
   await server.register(routes);
 }
+
+// Workers
+server.register(campaignWorker);
 
 await server.ready();
 server.swagger();
