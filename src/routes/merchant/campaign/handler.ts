@@ -190,7 +190,7 @@ export const campaignUpdateHandler = async (request: FastifyRequest, reply: Fast
           })),
         },
         requirements: {
-          // deleteMany: {}, // Delete all existing requirements
+          deleteMany: {},
           create: body.requirements.map((requirement) => ({
             contractAddress: requirement.contractAddress,
             network: requirement.network,
