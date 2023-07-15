@@ -2,13 +2,15 @@ import { FastifyRequest, FastifyReply } from 'fastify';
 import { prismaClient } from '../../../prisma/index.js';
 import { unixToDate } from '../../../utils/dateUtils.js';
 
-export const campaignByShopIdHandler = async (request: FastifyRequest, reply: FastifyReply) => {
+export const campaignGetHandler = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
-    const { shopId } = request.params as { shopId: string };
+    const { isActive, shopId } = request.query as { isActive: boolean, shopId: string };
+
 
     const campaigns = await prismaClient.merchantCampaign.findMany({
       where: {
         shopId: shopId,
+        isActive: isActive
       },
       include: {
         benefits: true,
@@ -37,8 +39,6 @@ export const campaignByShopIdHandler = async (request: FastifyRequest, reply: Fa
       }
     });
 
-    console.log(campaigns);
-
     reply.code(200).send(campaigns);
   } catch (error) {
     console.log(error);
@@ -53,7 +53,6 @@ export const campaignByShopIdHandler = async (request: FastifyRequest, reply: Fa
 export const campaignCreateHandler = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
     const body = request.body as CampaignCreateRequest;
-
     const { id: userId } = request.user;
 
     const shop = await prismaClient.merchantShop.findUnique({
@@ -78,12 +77,15 @@ export const campaignCreateHandler = async (request: FastifyRequest, reply: Fast
       });
     }
 
-    console.log(body.benefits)
+
+    const nowUnix = Date.now() / 1000;
+    const isActive = body.startDate <= nowUnix && nowUnix <= body.endDate;
 
     const campaign = await prismaClient.merchantCampaign.create({
       data: {
         name: body.name,
         description: body.description,
+        isActive: isActive,
 
         startPeriod: unixToDate(body.startDate),
         endPeriod: unixToDate(body.endDate),
@@ -92,43 +94,28 @@ export const campaignCreateHandler = async (request: FastifyRequest, reply: Fast
         totalQuota: body.totalQuota,
         perUserQuota: body.perUserQuota,
         perUserDailyQuota: body.perUserDailyQuota,
-
+        benefits: {
+          create: body.benefits.map((benefit) => ({
+            type: benefit.type,
+            value: benefit.value,
+          }))
+        },
+        requirements: {
+          create: body.requirements.map((requirement) => ({
+            contractAddress: requirement.contractAddress,
+            network: requirement.network,
+            minimumHold: requirement.minimumHold,
+            customConditions: {
+              create: requirement.customConditions.map((customCondition) => ({
+                type: customCondition.type,
+                properties: customCondition as any, 
+              }))
+            }
+          }))
+        },
         shopId: body.shopId,
       },
     });
-
-    for (let i = 0; i < body.benefits.length; i += 1) {
-      const benefitItem = body.benefits[i];
-
-      await prismaClient.merchantCampaignBenefit.create({
-        data: {
-          campaignId: campaign.id,
-          type: benefitItem.type,
-          value: benefitItem.value,
-        },
-      });
-    }
-
-    for (let i = 0; i < body.requirements.length; i += 1) {
-      const requirementItem = body.requirements[i];
-
-      await prismaClient.merchantCampaignRequirement.create({
-        data: {
-          campaignId: campaign.id,
-          contractAddress: requirementItem.contractAddress,
-          network: requirementItem.network,
-          minimumHold: requirementItem.minimumHold,
-          customConditions: {
-            createMany: {
-              data: requirementItem.customConditions.map((customCondition) => ({
-                type: customCondition.type,
-                properties: customCondition as any,
-              })),
-            },
-          },
-        },
-      });
-    }
 
     reply.code(200).send(campaign);
   } catch (error) {
@@ -183,70 +170,43 @@ export const campaignUpdateHandler = async (request: FastifyRequest, reply: Fast
 
     const campaign = await prismaClient.merchantCampaign.update({
       where: {
-        id: id,
+        id: currCampaign.id,
       },
       data: {
         name: body.name,
         description: body.description,
-        image: body.image,
-
         startPeriod: unixToDate(body.startDate),
         endPeriod: unixToDate(body.endDate),
-
+        requirementOperator: body.requirementOperator,
         totalQuota: body.totalQuota,
         perUserQuota: body.perUserQuota,
         perUserDailyQuota: body.perUserDailyQuota,
-
-        shopId: body.shopId,
-      },
-    });
-
-    // replace all benefits
-    await prismaClient.merchantCampaignBenefit.deleteMany({
-      where: {
-        campaignId: campaign.id,
-      },
-    });
-
-    for (let i = 0; i < body.benefits.length; i += 1) {
-      const benefitItem = body.benefits[i];
-
-      await prismaClient.merchantCampaignBenefit.create({
-        data: {
-          campaignId: campaign.id,
-          type: benefitItem.type,
-          value: benefitItem.value,
+        image: body.image,
+        benefits: {
+          deleteMany: {}, // Delete all existing benefits
+          create: body.benefits.map((benefit) => ({
+            type: benefit.type,
+            value: benefit.value,
+          })),
         },
-      });
-    }
-
-    // replace all requirements
-    await prismaClient.merchantCampaignRequirement.deleteMany({
-      where: {
-        campaignId: campaign.id,
-      },
-    });
-
-    for (let i = 0; i < body.requirements.length; i += 1) {
-      const requirementItem = body.requirements[i];
-
-      await prismaClient.merchantCampaignRequirement.create({
-        data: {
-          campaignId: campaign.id,
-          contractAddress: requirementItem.contractAddress,
-          network: requirementItem.network,
-          minimumHold: requirementItem.minimumHold,
-          customConditions: {
-            createMany: {
-              data: requirementItem.customConditions.map((customCondition) => ({
+        requirements: {
+          // deleteMany: {}, // Delete all existing requirements
+          create: body.requirements.map((requirement) => ({
+            contractAddress: requirement.contractAddress,
+            network: requirement.network,
+            minimumHold: requirement.minimumHold,
+            customConditions: {
+              create: requirement.customConditions.map((customCondition) => ({
                 type: customCondition.type,
                 properties: customCondition as any,
               })),
             },
-          },
+          })),
         },
-      });
-    }
+        shopId: body.shopId,
+      },
+    });
+    
 
 
     reply.code(200).send(campaign);

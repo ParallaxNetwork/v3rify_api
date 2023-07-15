@@ -10,29 +10,36 @@ export const campaignWorker: FastifyPluginAsync = async (server) => {
   });
 
   const updateCampaignIsActive = async () => {
-    const campaign = await prismaClient.merchantCampaign.findMany({})
+    const campaign = await prismaClient.merchantCampaign.findMany({
+      select: {
+        id: true,
+        startPeriod: true,
+        endPeriod: true,
+        isActive: true,
+      },
+    });
 
-    const nowDate = new Date()
-    for(let i = 0; i < campaign.length; i++) {
-      if(campaign[i].startPeriod <= nowDate && campaign[i].endPeriod > nowDate) {
+    const nowDate = new Date();
+    for (let i = 0; i < campaign.length; i++) {
+      if (campaign[i].startPeriod <= nowDate && campaign[i].endPeriod > nowDate) {
         await prismaClient.merchantCampaign.update({
           where: {
-            id: campaign[i].id
+            id: campaign[i].id,
           },
           data: {
-            isActive: true
-          }
-        })
+            isActive: true,
+          },
+        });
       } else {
         await prismaClient.merchantCampaign.update({
           where: {
-            id: campaign[i].id
+            id: campaign[i].id,
           },
           data: {
-            isActive: false
-          }
-        })
+            isActive: false,
+          },
+        });
       }
     }
-  }
+  };
 };

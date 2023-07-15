@@ -228,13 +228,7 @@ export const merchantMeHandler = async (request: FastifyRequest, reply: FastifyR
       });
     }
 
-    return reply.code(200).send({
-      id: merchant.id,
-      type: merchant.type,
-      username: merchant.username,
-      walletAddress: merchant.walletAddress,
-      shops: merchant.shops,
-    });
+    return reply.code(200).send(merchant);
   } catch (error) {
     console.error(error);
     reply.code(500).send({
@@ -244,3 +238,35 @@ export const merchantMeHandler = async (request: FastifyRequest, reply: FastifyR
     });
   }
 };
+
+
+export const merchantEditAccountInfoHandler = async (request: FastifyRequest, reply: FastifyReply) => { 
+  try {
+    const { id } = request.user;
+    console.log("id", id)
+
+    const { email, phoneNumber } = request.body as {
+      email?: string;
+      phoneNumber?: string;
+    }
+
+    const updatedMerchant = await prismaClient.merchant.update({
+      where: {
+        id: id,
+      },
+      data: {
+        email: email,
+        phoneNumber: phoneNumber,
+      },
+    });
+
+    return reply.code(200).send("Account info updated successfully");
+  } catch (error) {
+    console.error(error);
+    reply.code(500).send({
+      code: 'internal-server-error',
+      error: 'internal-server-error',
+      message: error,
+    });
+  }
+}

@@ -41,6 +41,9 @@ model Merchant {
   walletAddress   String?         @unique
   type            String          
 
+  email           String?         
+  phoneNumber     String?
+
   shops           MerchantShop[]
 
   createdAt  DateTime @default(now())

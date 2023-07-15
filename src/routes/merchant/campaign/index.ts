@@ -3,46 +3,38 @@ import { FastifyPluginAsync, FastifyReply, FastifyRequest } from 'fastify';
 
 import { authenticate } from '../../../middleware/auth.js';
 import { ErrorSchema } from '../../../typebox/common.js';
-import { campaignByShopIdHandler, campaignCreateHandler, campaignUpdateHandler } from './handler.js';
+import { campaignCreateHandler, campaignGetHandler, campaignUpdateHandler } from './handler.js';
 import { CampaignCreateRequestSchema, CampaignSchema } from '../../../typebox/Campaign.js';
 
 const campaignRoutes: FastifyPluginAsync = async (server) => {
   server.get(
-    '/:shopId',
+    '',
     {
       schema: {
         response: {
           200: Type.Array(Type.Any()),
           400: ErrorSchema,
         },
-        params: Type.Object({
-          shopId: Type.String(),
-        }),
+        querystring: {
+          shopId: Type.Optional(
+            Type.String({
+              default: undefined,
+            }),
+          ),
+          isActive: Type.Optional(
+            Type.Boolean({
+              default: undefined,
+            }),
+          ),
+        },
         tags: ['campaign'],
-        summary: 'Get all campaigns from a merchant',
-        description: 'Get all campaigns from a merchant',
+        summary: 'Get campaigns',
+        description: 'Get campaigns with filter',
         produces: ['application/json'],
-        security: [
-          {
-            apiKey: [],
-          },
-        ],
       },
-      preValidation: [
-        async function (request: FastifyRequest, reply: FastifyReply) {
-          const { shopId } = request.params as { shopId: string };
-          if (!shopId) {
-            reply.code(400).send({
-              code: 'missing-fields',
-              error: 'Missing fields',
-              message: 'Missing fields',
-            });
-          }
-        }
-      ]
     },
-    campaignByShopIdHandler
-  )
+    campaignGetHandler,
+  );
 
   server.post(
     '/create',
@@ -93,8 +85,8 @@ const campaignRoutes: FastifyPluginAsync = async (server) => {
       },
       preHandler: [async (request, reply) => authenticate(request, reply, null)],
     },
-    campaignUpdateHandler
-  )
+    campaignUpdateHandler,
+  );
 };
 
 export default campaignRoutes;

@@ -1,7 +1,10 @@
 import { Type } from '@sinclair/typebox';
 import { FastifyPluginAsync, FastifyReply, FastifyRequest } from 'fastify';
+import validator from 'validator';
+
 import {
   merchantCheckUsernameHandler,
+  merchantEditAccountInfoHandler,
   merchantMeHandler,
   merchantRegisterHandler,
   merchantUsernameLoginHandler,
@@ -266,6 +269,8 @@ const authRoutes: FastifyPluginAsync = async (server) => {
             type: Type.String(),
             username: Type.String(),
             walletAddress: Type.String(),
+            email: Type.Optional(Type.String()),
+            phoneNumber: Type.Optional(Type.String()),
             shops: Type.Array(ShopType),
           }),
           401: ErrorSchema,
@@ -280,6 +285,56 @@ const authRoutes: FastifyPluginAsync = async (server) => {
     },
     merchantMeHandler,
   );
+
+  server.put(
+    '/merchant/account-info',
+    {
+      schema: {
+        body: Type.Object(
+          {
+            email: Type.Optional(Type.String()),
+            phoneNumber: Type.Optional(Type.String()),
+          }
+        ),
+        response: {
+          200: Type.String(),
+          401: ErrorSchema,
+        },
+        tags: ['auth'],
+        summary: 'Edit account info',
+        description: 'Edit account info',
+        produces: ['application/json'],
+        security: [{ apiKey: [] }],
+      },
+      preHandler: [async (request, reply) => authenticate(request, reply, null)],
+      preValidation: [
+        async function (request: FastifyRequest, reply: FastifyReply) {
+          const { email, phoneNumber } = request.body as {
+            email?: string;
+            phoneNumber?: string;
+          };
+
+          if (email && !validator.isEmail(email)){
+            reply.code(400).send({
+              code: 'invalid-email',
+              error: 'Invalid email',
+              message: 'Invalid email',
+            });
+          }
+
+          if (phoneNumber && !validator.isMobilePhone(phoneNumber, 'any')){
+            reply.code(400).send({
+              code: 'invalid-phone-number',
+              error: 'Invalid phone number',
+              message: 'Invalid phone number',
+            });
+          }
+        }
+      ]
+    },
+    merchantEditAccountInfoHandler
+  )
+
 };
 
 export default authRoutes;
