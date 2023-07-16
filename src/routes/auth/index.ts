@@ -35,6 +35,53 @@ const authRoutes: FastifyPluginAsync = async (server) => {
     nonceHandler,
   );
 
+  server.post(
+    '/wallet-login',
+    {
+      schema: {
+        body: Type.Object({
+          signature: Type.String(),
+          address: Type.String(),
+          // message is siwe object
+          message: Type.Any(),
+        }),
+        response: {
+          200: Type.Object({
+            id: Type.String(),
+            token: Type.String(),
+            type: Type.Literal('wallet'),
+          }),
+          400: ErrorSchema,
+        },
+        tags: ['auth'],
+        summary: 'Login with a wallet',
+        description: 'Login with a wallet',
+        produces: ['application/json'],
+      },
+      preValidation: [
+        async function (request: FastifyRequest, reply: FastifyReply) {
+          const { signature, address, message } = request.body as WalletLoginRequest;
+          if (!signature || !address || !message) {
+            reply.code(400).send({
+              code: 'missing-fields',
+              error: 'Missing fields',
+              message: 'Missing fields',
+            });
+          }
+
+          if (!validateAddress(address)) {
+            reply.code(400).send({
+              code: 'invalid-address',
+              error: 'Invalid address',
+              message: 'Invalid address',
+            });
+          }
+        },
+      ],
+    },
+    merchantWalletLoginHandler,
+  );
+
   /* ------------------------- Register a new merchant ------------------------ */
   server.post(
     '/merchant/register',
@@ -290,12 +337,10 @@ const authRoutes: FastifyPluginAsync = async (server) => {
     '/merchant/account-info',
     {
       schema: {
-        body: Type.Object(
-          {
-            email: Type.Optional(Type.String()),
-            phoneNumber: Type.Optional(Type.String()),
-          }
-        ),
+        body: Type.Object({
+          email: Type.Optional(Type.String()),
+          phoneNumber: Type.Optional(Type.String()),
+        }),
         response: {
           200: Type.String(),
           401: ErrorSchema,
@@ -314,7 +359,7 @@ const authRoutes: FastifyPluginAsync = async (server) => {
             phoneNumber?: string;
           };
 
-          if (email && !validator.isEmail(email)){
+          if (email && !validator.isEmail(email)) {
             reply.code(400).send({
               code: 'invalid-email',
               error: 'Invalid email',
@@ -322,19 +367,18 @@ const authRoutes: FastifyPluginAsync = async (server) => {
             });
           }
 
-          if (phoneNumber && !validator.isMobilePhone(phoneNumber, 'any')){
+          if (phoneNumber && !validator.isMobilePhone(phoneNumber, 'any')) {
             reply.code(400).send({
               code: 'invalid-phone-number',
               error: 'Invalid phone number',
               message: 'Invalid phone number',
             });
           }
-        }
-      ]
+        },
+      ],
     },
-    merchantEditAccountInfoHandler
-  )
-
+    merchantEditAccountInfoHandler,
+  );
 };
 
 export default authRoutes;

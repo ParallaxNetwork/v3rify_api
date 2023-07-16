@@ -1,7 +1,7 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import bcrypt from 'bcrypt';
 
-import { generateMerchantToken, hashPassword } from './helpers.js';
+import { generateMerchantToken, generateUserToken, hashPassword } from './helpers.js';
 import { prismaClient } from '../../prisma/index.js';
 import { SiweMessage, generateNonce } from 'siwe';
 import { UsernameLoginRequest, WalletLoginRequest } from '../../@types/Auth.js';
@@ -10,6 +10,66 @@ export const nonceHandler = async (request: FastifyRequest, reply: FastifyReply)
   try {
     const nonce = generateNonce();
     return reply.code(200).send(nonce);
+  } catch (error) {
+    console.log(error);
+    reply.code(500).send({
+      code: 'internal-server-error',
+      error: 'internal-server-error',
+      message: 'Internal server error',
+    });
+  }
+};
+
+export const userWalletLoginHandler = async (request: FastifyRequest, reply: FastifyReply) => {
+  try {
+    const { address, signature, message } = request.body as WalletLoginRequest;
+
+    const siweMessage = new SiweMessage(message);
+
+    try {
+      await siweMessage.verify({
+        signature: signature,
+      });
+
+      // Check if user already exists
+      const existingUser = await prismaClient.user.findUnique({
+        where: {
+          walletAddress: address,
+        },
+      });
+
+      if (!existingUser) {
+        // Create user
+        const user = await prismaClient.user.create({
+          data: {
+            walletAddress: address,
+          },
+        });
+
+        const token = await generateUserToken(user);
+
+        return reply.code(200).send({
+          id: user.id,
+          token: token,
+          type: 'wallet',
+        });
+      } else {
+        const token = await generateUserToken(existingUser);
+
+        return reply.code(200).send({
+          id: existingUser.id,
+          token: token,
+          type: 'wallet',
+        });
+      }
+    } catch (error) {
+      console.log(error);
+      return reply.code(400).send({
+        code: 'invalid-signature',
+        error: 'invalid-signature',
+        message: 'Invalid signature',
+      });
+    }
   } catch (error) {
     console.log(error);
     reply.code(500).send({
@@ -170,8 +230,8 @@ export const merchantWalletLoginHandler = async (request: FastifyRequest, reply:
           data: {
             walletAddress: address,
             type: 'wallet',
-          }
-        })
+          },
+        });
 
         const token = await generateMerchantToken(merchant);
 
@@ -180,7 +240,7 @@ export const merchantWalletLoginHandler = async (request: FastifyRequest, reply:
           token: token,
           type: 'wallet',
         });
-      }else{
+      } else {
         const token = await generateMerchantToken(existingMerchant);
 
         return reply.code(200).send({
@@ -215,8 +275,8 @@ export const merchantMeHandler = async (request: FastifyRequest, reply: FastifyR
           take: 1,
           orderBy: {
             createdAt: 'desc',
-          }
-        }
+          },
+        },
       },
     });
 
@@ -239,16 +299,15 @@ export const merchantMeHandler = async (request: FastifyRequest, reply: FastifyR
   }
 };
 
-
-export const merchantEditAccountInfoHandler = async (request: FastifyRequest, reply: FastifyReply) => { 
+export const merchantEditAccountInfoHandler = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
     const { id } = request.user;
-    console.log("id", id)
+    console.log('id', id);
 
     const { email, phoneNumber } = request.body as {
       email?: string;
       phoneNumber?: string;
-    }
+    };
 
     const updatedMerchant = await prismaClient.merchant.update({
       where: {
@@ -260,7 +319,7 @@ export const merchantEditAccountInfoHandler = async (request: FastifyRequest, re
       },
     });
 
-    return reply.code(200).send("Account info updated successfully");
+    return reply.code(200).send('Account info updated successfully');
   } catch (error) {
     console.error(error);
     reply.code(500).send({
@@ -269,4 +328,4 @@ export const merchantEditAccountInfoHandler = async (request: FastifyRequest, re
       message: error,
     });
   }
-}
+};

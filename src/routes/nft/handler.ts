@@ -1,0 +1,123 @@
+import { FastifyReply, FastifyRequest } from 'fastify';
+import { prismaClient } from '../../prisma';
+import { alchemyClient } from '../../utils/alchemy';
+import { infuraGetAllNfts, infuraGetAllOwnedNfts, summarizeNftAttributes } from './helpers';
+
+export const nftGetCollectionMetadataHandler = async (request: FastifyRequest, reply: FastifyReply) => {
+  try {
+    const { id, chain } = request.query as { id: string; chain: 'ethereum' | 'matic' };
+    // find collection metadata
+    const existing = await prismaClient.nftCollection.findUnique({
+      where: {
+        address_chain: {
+          address: id,
+          chain: chain,
+        },
+      },
+    });
+
+    if (existing) {
+      // if data is updated within 15 minutes, return existing
+      // if (existing.updatedAt > manyMinutesAgo(15)) {
+      return reply.code(200).send(existing);
+      // }
+    }
+
+    const collectionMetadata = await alchemyClient(chain).nft.getContractMetadata(id);
+    if (collectionMetadata.tokenType !== 'ERC721') {
+      return reply.code(400).send({
+        code: 'invalid_collection',
+        error: 'Bad Request',
+        message: 'Invalid collection. Make sure you are inputting the right network and collection address.',
+      });
+    }
+
+    // const collectionAttributesSummary = await alchemyClient(chain).nft.summarizeNftAttributes(id);
+
+    // get all nfts
+    const allNfts = await infuraGetAllNfts(id, chain);
+    const collectionAttributesSummary = summarizeNftAttributes(allNfts);
+
+    const metadata = await prismaClient.nftCollection.upsert({
+      where: {
+        address_chain: {
+          address: id,
+          chain: chain,
+        },
+      },
+      create: {
+        address: id,
+        name: collectionMetadata.name,
+        symbol: collectionMetadata.symbol,
+        tokenType: collectionMetadata.tokenType,
+        chain: chain,
+        opensea: { ...collectionMetadata.openSea },
+        description: collectionMetadata.openSea.description,
+        image: collectionMetadata.openSea.imageUrl,
+        rarity: { ...collectionAttributesSummary },
+      },
+      update: {
+        name: collectionMetadata.name,
+        symbol: collectionMetadata.symbol,
+        opensea: { ...collectionMetadata.openSea },
+        description: collectionMetadata.openSea.description,
+        image: collectionMetadata.openSea.imageUrl,
+        rarity: { ...collectionAttributesSummary },
+      },
+    });
+
+    for (let i = 0; i < allNfts.length; i++) {
+      await prismaClient.nft.upsert({
+        create: {
+          tokenId: allNfts[i].tokenId,
+          chain: chain,
+          type: allNfts[i].type,
+          name: allNfts[i].metadata.name,
+          attributes: allNfts[i].metadata.attributes,
+          collectionAddress: id,
+        },
+        update: {
+          name: allNfts[i].metadata.name,
+          attributes: allNfts[i].metadata.attributes,
+        },
+        where: {
+          tokenId_chain_collectionAddress: {
+            chain: chain,
+            tokenId: allNfts[i].tokenId,
+            collectionAddress: id,
+          },
+        },
+      });
+    }
+
+    return reply.code(200).send(metadata);
+  } catch (error) {
+    console.log(error);
+    reply.code(500).send({
+      code: 'internal_server_error',
+      error: 'Internal Server Error',
+      message: 'Something went wrong',
+    });
+  }
+};
+
+export const nftGetOwnedNftsHandler = async (request: FastifyRequest, reply: FastifyReply) => {
+  try {
+    const { address } = request.query as { address: string };
+
+    const ownedNfts = []
+
+    const chainIds = [1, 137]
+
+    for (let i = 0; i < chainIds.length; i++) {
+      const nfts = await infuraGetAllOwnedNfts(address, chainIds[i])
+      ownedNfts.push(...nfts)
+    }
+
+    console.log(ownedNfts)
+
+    return reply.code(200).send(ownedNfts);
+  } catch (error) {
+    console.log(error);
+  }
+};

@@ -15,6 +15,7 @@ declare interface InfuraAssetsModel {
   supply: string;
   type: string;
   metadata: InfuraMetadataModel;
+  chainId?: number;
 }
 
 declare interface InfuraNftModel {

@@ -1,5 +1,5 @@
 import bcrypt from 'bcrypt';
-import { Merchant } from '@prisma/client';
+import { Merchant, User } from '@prisma/client';
 import jwt from 'jsonwebtoken';
 import { nanoid } from 'nanoid';
 
@@ -10,14 +10,32 @@ export const generateMerchantToken = async (merchant: Merchant) => {
     {
       id: merchant.id,
       type: merchant.type,
-      seed: nanoid(5)
+      seed: nanoid(5),
     },
     JWT_SECRET,
     {
       subject: 'merchant',
       issuer: 'v3rify',
       expiresIn: '1y',
-    }
+    },
+  );
+
+  return token;
+};
+
+export const generateUserToken = async (user: User) => {
+  const token = jwt.sign(
+    {
+      id: user.id,
+      type: 'wallet',
+      seed: nanoid(5),
+    },
+    JWT_SECRET,
+    {
+      subject: 'user',
+      issuer: 'v3rify',
+      expiresIn: '1y',
+    },
   );
 
   return token;

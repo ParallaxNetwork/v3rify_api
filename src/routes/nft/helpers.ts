@@ -1,4 +1,4 @@
-import { infuraGetNftsFromCollection } from '../../utils/infura/infuraNft.js';
+import { infuraGetNftsFromCollection, infuraGetOwnedNfts } from '../../utils/infura/infuraNft.js';
 import { convertChainStringToId } from '../../utils/miscUtils.js';
 
 export const infuraGetAllNfts = async (address: string, chain: string): Promise<InfuraAssetsModel[]> => {
@@ -72,3 +72,34 @@ export const summarizeNftAttributes = (nfts: InfuraAssetsModel[]):RarityModel =>
 
   return rarity;
 };
+
+
+export const infuraGetAllOwnedNfts = async (address: string, chainId: number): Promise<InfuraAssetsModel[]> => {
+  try {
+    const nfts = [] as InfuraAssetsModel[];
+    let cursor = null;
+
+    do {
+      const response = await infuraGetOwnedNfts(chainId, address, cursor)
+      const { assets, cursor: newCursor } = response;
+
+      nfts.push(...assets);
+      cursor = newCursor;
+
+      console.log(`Fetched ${nfts.length} nfts in total`);
+    } while (cursor !== null);
+
+    // add chainId to each nft
+    nfts.forEach((nft) => {
+      nft.chainId = chainId;
+      console.log("METADATA", nft.metadata)
+    });
+
+    // filters out if nft.metadata is null
+    const filteredNfts = nfts.filter((nft) => nft.metadata !== null);
+
+    return filteredNfts;
+  } catch (error) {
+    console.log(error);
+  }
+}

@@ -24,3 +24,22 @@ export const infuraGetNftsFromCollection = async (
 
   return res.data as InfuraNftModel;
 };
+
+export const infuraGetOwnedNfts = async (
+  chainId: number,
+  address: string,
+  cursor?: string,
+): Promise<InfuraNftModel> => {
+  const res = await axios({
+    method: 'GET',
+    url: baseUrl + `/networks/${chainId}/accounts/${address}/assets/nfts`,
+    headers: {
+      Authorization: authHeader,
+    },
+    params: {
+      cursor: cursor || undefined,
+    },
+  });
+
+  return res.data as InfuraNftModel;
+};
