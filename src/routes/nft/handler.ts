@@ -1,7 +1,7 @@
 import { FastifyReply, FastifyRequest } from 'fastify';
-import { prismaClient } from '../../prisma';
-import { alchemyClient } from '../../utils/alchemy';
-import { infuraGetAllNfts, infuraGetAllOwnedNfts, summarizeNftAttributes } from './helpers';
+import { prismaClient } from '../../prisma/index.js'
+import { alchemyClient } from '../../utils/alchemy/index.js';
+import { infuraGetAllNfts, infuraGetAllOwnedNfts, summarizeNftAttributes } from './helpers.js';
 
 export const nftGetCollectionMetadataHandler = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
