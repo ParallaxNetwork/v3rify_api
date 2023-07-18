@@ -10,7 +10,7 @@ export const nftGetCollectionMetadataHandler = async (request: FastifyRequest, r
     const existing = await prismaClient.nftCollection.findUnique({
       where: {
         address_chain: {
-          address: id,
+          address: id.toLowerCase(),
           chain: chain,
         },
       },
@@ -24,7 +24,7 @@ export const nftGetCollectionMetadataHandler = async (request: FastifyRequest, r
     }
 
     const collectionMetadata = await alchemyClient(chain).nft.getContractMetadata(id);
-    if (collectionMetadata.tokenType !== 'ERC721') {
+    if (collectionMetadata.tokenType !== 'ERC721' && collectionMetadata.tokenType !== 'ERC1155') {
       return reply.code(400).send({
         code: 'invalid_collection',
         error: 'Bad Request',
@@ -32,7 +32,18 @@ export const nftGetCollectionMetadataHandler = async (request: FastifyRequest, r
       });
     }
 
-    // const collectionAttributesSummary = await alchemyClient(chain).nft.summarizeNftAttributes(id);
+    console.log('collectionMetadata', collectionMetadata);
+
+    try {
+      const collectionAttributesSummaryAlchemy = await alchemyClient(chain).nft.summarizeNftAttributes(id);
+      console.log('collectionAttributesSummaryAlchemy', collectionAttributesSummaryAlchemy);
+    } catch (error) {
+      return reply.code(400).send({
+        code: 'invalid_collection',
+        error: 'Bad Request',
+        message: error
+      });
+    }
 
     // get all nfts
     const allNfts = await infuraGetAllNfts(id, chain);
@@ -41,12 +52,12 @@ export const nftGetCollectionMetadataHandler = async (request: FastifyRequest, r
     const metadata = await prismaClient.nftCollection.upsert({
       where: {
         address_chain: {
-          address: id,
+          address: id.toLowerCase(),
           chain: chain,
         },
       },
       create: {
-        address: id,
+        address: id.toLowerCase(),
         name: collectionMetadata.name,
         symbol: collectionMetadata.symbol,
         tokenType: collectionMetadata.tokenType,
@@ -74,7 +85,7 @@ export const nftGetCollectionMetadataHandler = async (request: FastifyRequest, r
           type: allNfts[i].type,
           name: allNfts[i].metadata.name,
           attributes: allNfts[i].metadata.attributes,
-          collectionAddress: id,
+          collectionAddress: id.toLowerCase(),
         },
         update: {
           name: allNfts[i].metadata.name,
@@ -84,7 +95,7 @@ export const nftGetCollectionMetadataHandler = async (request: FastifyRequest, r
           tokenId_chain_collectionAddress: {
             chain: chain,
             tokenId: allNfts[i].tokenId,
-            collectionAddress: id,
+            collectionAddress: id.toLowerCase(),
           },
         },
       });
@@ -113,8 +124,6 @@ export const nftGetOwnedNftsHandler = async (request: FastifyRequest, reply: Fas
       const nfts = await infuraGetAllOwnedNfts(address, chainIds[i])
       ownedNfts.push(...nfts)
     }
-
-    console.log(ownedNfts)
 
     return reply.code(200).send(ownedNfts);
   } catch (error) {

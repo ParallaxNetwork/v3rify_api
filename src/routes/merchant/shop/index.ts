@@ -108,11 +108,6 @@ const shopRoutes: FastifyPluginAsync = async (server) => {
         summary: 'Get a shop by its id',
         description: 'Get a shop by its id',
         produces: ['application/json'],
-        security: [
-          {
-            apiKey: [],
-          },
-        ],
       },
       preValidation: [
         async function (request: FastifyRequest, reply: FastifyReply) {
@@ -127,7 +122,6 @@ const shopRoutes: FastifyPluginAsync = async (server) => {
           }
         },
       ],
-      preHandler: [async (request, reply) => authenticate(request, reply, null)],
     },
     shopGetShopByIdHandler,
   );

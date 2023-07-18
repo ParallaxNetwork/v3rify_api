@@ -10,6 +10,7 @@ import {
   merchantUsernameLoginHandler,
   merchantWalletLoginHandler,
   nonceHandler,
+  userWalletLoginHandler,
 } from './handler.js';
 import { validateAddress } from '../../utils/web3/web3ValidationUtil.js';
 import { checkMerchantWhitelist } from '../../middleware/whitelist.js';
@@ -79,7 +80,7 @@ const authRoutes: FastifyPluginAsync = async (server) => {
         },
       ],
     },
-    merchantWalletLoginHandler,
+    userWalletLoginHandler,
   );
 
   /* ------------------------- Register a new merchant ------------------------ */

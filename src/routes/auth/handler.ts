@@ -39,6 +39,7 @@ export const userWalletLoginHandler = async (request: FastifyRequest, reply: Fas
       });
 
       if (!existingUser) {
+        console.log('User does not exist')
         // Create user
         const user = await prismaClient.user.create({
           data: {
@@ -54,6 +55,7 @@ export const userWalletLoginHandler = async (request: FastifyRequest, reply: Fas
           type: 'wallet',
         });
       } else {
+        console.log('User exists')
         const token = await generateUserToken(existingUser);
 
         return reply.code(200).send({

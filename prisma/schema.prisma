@@ -141,7 +141,6 @@ model MerchantCampaignBenefit {
 
   campaignId      String
   campaign        MerchantCampaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
-  usages          MerchantCampaignUsage[]
 
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
@@ -149,21 +148,15 @@ model MerchantCampaignBenefit {
 
 model MerchantCampaignUsage {
   id              String    @id @default(uuid())
-  value           Int       @default(0)
-  valueUnit       String    @default("percent")
-  nftIds          String[]  @default([])
+  
+  // nftUsages       NftUsage[]
 
-  paymentTotal    Int       @default(0)
-  paymentUnit     String    @default("IDR")
-  campaignValue       Int       @default(0)
-  campaignValueUnit   String    @default("IDR")
-
-  campaignId          String
-  campaign            MerchantCampaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  campaignId      String
+  campaign        MerchantCampaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
   userId          String
   user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  benefitId       String
-  benefit         MerchantCampaignBenefit  @relation(fields: [benefitId], references: [id], onDelete: Cascade)
+  
+
 
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
@@ -191,18 +184,29 @@ model NftCollection {
 }
 
 model Nft {
-  id            String    @default(uuid())
-  chain         String    @default("ethereum")
-  tokenId       String    
-  type          String    @default("ERC721")
-  name          String?
-  attributes    Json?
+  id                String         @default(uuid())
+  chain             String         @default("ethereum")
+  tokenId           String
+  type              String         @default("ERC721")
+  name              String?
+  attributes        Json?
 
-  collectionAddress   String 
-  collection          NftCollection @relation(fields: [collectionAddress], references: [address], onDelete: Cascade)
+  collectionAddress String
+  collection        NftCollection  @relation(fields: [collectionAddress], references: [address], onDelete: Cascade)
 
   @@id([tokenId, chain, collectionAddress])
 }
+
+model NftUsage {
+  id              String    @id @default(uuid())
+  nftId           String
+  tokenId         String
+  chain           String
+
+  // campaignUsageId String
+  // campaignUsage   MerchantCampaignUsage  @relation(fields: [campaignUsageId], references: [id], onDelete: Cascade)
+}
+
 // ==================== Merchant End ====================
 
 // ==================== Common ====================

@@ -29,6 +29,7 @@ export const infuraGetOwnedNfts = async (
   chainId: number,
   address: string,
   cursor?: string,
+  tokenAddresses?: string[],
 ): Promise<InfuraNftModel> => {
   const res = await axios({
     method: 'GET',
@@ -38,6 +39,7 @@ export const infuraGetOwnedNfts = async (
     },
     params: {
       cursor: cursor || undefined,
+      tokenAddresses: tokenAddresses ? tokenAddresses.join(',') : undefined,
     },
   });
 

@@ -3,7 +3,7 @@ import { FastifyPluginAsync, FastifyReply, FastifyRequest } from 'fastify';
 
 import { authenticate } from '../../../middleware/auth.js';
 import { ErrorSchema } from '../../../typebox/common.js';
-import { campaignCreateHandler, campaignGetHandler, campaignUpdateHandler } from './handler.js';
+import { campaignClaimHandler, campaignCreateHandler, campaignGetHandler, campaignUpdateHandler } from './handler.js';
 import { CampaignCreateRequestSchema, CampaignSchema } from '../../../typebox/Campaign.js';
 
 const campaignRoutes: FastifyPluginAsync = async (server) => {
@@ -22,6 +22,16 @@ const campaignRoutes: FastifyPluginAsync = async (server) => {
             }),
           ),
           isActive: Type.Optional(
+            Type.Boolean({
+              default: undefined,
+            }),
+          ),
+          id: Type.Optional(
+            Type.String({
+              default: undefined,
+            }),
+          ),
+          withDetails: Type.Optional(
             Type.Boolean({
               default: undefined,
             }),
@@ -87,6 +97,38 @@ const campaignRoutes: FastifyPluginAsync = async (server) => {
     },
     campaignUpdateHandler,
   );
+
+
+  server.post(
+    '/claim',
+    {
+      schema: {
+        body: Type.Object({
+          campaignId: Type.String(),  
+          nfts: Type.Array(Type.Object({
+            address: Type.String(),
+            chainId: Type.Number(),
+            tokenId: Type.String(),
+          }))
+        }),
+        response: {
+          200: Type.String(),
+          400: ErrorSchema,
+        },
+        tags: ['campaign'],
+        summary: 'Claim a Campaign',
+        description: 'Claim a Campaign',
+        produces: ['application/json'],
+        security: [
+          {
+            apiKey: [],
+          }
+        ],
+      },
+      preHandler: [async (request, reply) => authenticate(request, reply, null)],
+    },
+    campaignClaimHandler
+  )
 };
 
 export default campaignRoutes;

@@ -45,6 +45,7 @@
     "@infura/sdk": "^2.4.3",
     "@prisma/client": "^4.16.2",
     "@sinclair/typebox": "^0.28.20",
+    "@thirdweb-dev/storage": "^1.1.9",
     "@types/bcrypt": "^5.0.0",
     "@types/jsonwebtoken": "^9.0.2",
     "ajv": "^8.11.2",

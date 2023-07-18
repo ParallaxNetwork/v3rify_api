@@ -23,7 +23,7 @@ export const infuraGetAllNfts = async (address: string, chain: string): Promise<
   }
 };
 
-export const summarizeNftAttributes = (nfts: InfuraAssetsModel[]):RarityModel => {
+export const summarizeNftAttributes = (nfts: InfuraAssetsModel[]): RarityModel => {
   const rarity: RarityModel = {
     attributes: [],
     total: 0,
@@ -73,14 +73,13 @@ export const summarizeNftAttributes = (nfts: InfuraAssetsModel[]):RarityModel =>
   return rarity;
 };
 
-
-export const infuraGetAllOwnedNfts = async (address: string, chainId: number): Promise<InfuraAssetsModel[]> => {
+export const infuraGetAllOwnedNfts = async (address: string, chainId: number, tokenAddresses?: string[]): Promise<InfuraAssetsModel[]> => {
   try {
     const nfts = [] as InfuraAssetsModel[];
     let cursor = null;
 
     do {
-      const response = await infuraGetOwnedNfts(chainId, address, cursor)
+      const response = await infuraGetOwnedNfts(chainId, address, cursor, tokenAddresses);
       const { assets, cursor: newCursor } = response;
 
       nfts.push(...assets);
@@ -92,14 +91,15 @@ export const infuraGetAllOwnedNfts = async (address: string, chainId: number): P
     // add chainId to each nft
     nfts.forEach((nft) => {
       nft.chainId = chainId;
-      console.log("METADATA", nft.metadata)
     });
 
     // filters out if nft.metadata is null
-    const filteredNfts = nfts.filter((nft) => nft.metadata !== null);
+    const filteredNfts = nfts.filter(
+      (nft) => nft.contract && nft.tokenId && nft.type && nft.metadata && nft.metadata.name && nft.metadata.name && nft.metadata.image
+    );
 
     return filteredNfts;
   } catch (error) {
     console.log(error);
   }
-}
+};

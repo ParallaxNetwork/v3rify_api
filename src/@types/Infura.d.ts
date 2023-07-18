@@ -3,6 +3,8 @@ declare interface InfuraMetadataModel {
   description: string;
   contract: string;
   tokenId: string;
+  image: string;
+  animation_url?: string;
   attributes: {
     trait_type: string;
     value: string;
@@ -37,4 +39,10 @@ declare interface RarityModel {
     }[];
   }[];
   total: number;
+}
+
+declare interface NftPointer { 
+  address: string
+  chainId: number
+  tokenId: string
 }
