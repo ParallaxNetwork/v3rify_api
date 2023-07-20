@@ -1,4 +1,4 @@
-import { Static, Type,  } from '@sinclair/typebox';
+import { Static, Type } from '@sinclair/typebox';
 
 const TokenIdsCondition = Type.Object({
   type: Type.Literal('tokenIds'),
@@ -7,10 +7,12 @@ const TokenIdsCondition = Type.Object({
 
 const NFTTraitsCondition = Type.Object({
   type: Type.Literal('nftTraits'),
-  nftTraits: Type.Array(Type.Object({
-    trait_type: Type.String(),
-    value: Type.String(),
-  })),
+  nftTraits: Type.Array(
+    Type.Object({
+      trait_type: Type.String(),
+      value: Type.String(),
+    }),
+  ),
 });
 
 const CampaignCustomCondition = Type.Union([TokenIdsCondition, NFTTraitsCondition]);
@@ -48,8 +50,28 @@ export const CampaignCreateRequestSchema = Type.Object({
   shopId: Type.String(),
 });
 
-
 export const CampaignSchema = Type.Object({
   ...CampaignCreateRequestSchema.properties,
   id: Type.String(),
+});
+
+export const ClaimResponseSchema = Type.Object({
+  id: Type.String(),
+  userId: Type.String(),
+  campaignId: Type.String(),
+  createdAt: Type.String(),
+  updatedAt: Type.String(),
+  campaign: Type.Object({
+    name: Type.String(),
+    description: Type.String(),
+    image: Type.Optional(Type.String()),
+
+    benefits: Type.Array(CampaignBenefitItem),
+
+    startPeriod: Type.Number(),
+    endPeriod: Type.Number(),
+
+
+    shopId: Type.String(),
+  }),
 });

@@ -3,8 +3,8 @@ import { FastifyPluginAsync, FastifyReply, FastifyRequest } from 'fastify';
 
 import { authenticate } from '../../../middleware/auth.js';
 import { ErrorSchema } from '../../../typebox/common.js';
-import { campaignClaimHandler, campaignCreateHandler, campaignGetHandler, campaignUpdateHandler } from './handler.js';
-import { CampaignCreateRequestSchema, CampaignSchema } from '../../../typebox/Campaign.js';
+import { campaignClaimHandler, campaignCreateHandler, campaignGetClaimDetailHandler, campaignGetHandler, campaignUpdateHandler } from './handler.js';
+import { CampaignCreateRequestSchema, CampaignSchema, ClaimResponseSchema } from '../../../typebox/Campaign.js';
 
 const campaignRoutes: FastifyPluginAsync = async (server) => {
   server.get(
@@ -128,6 +128,32 @@ const campaignRoutes: FastifyPluginAsync = async (server) => {
       preHandler: [async (request, reply) => authenticate(request, reply, null)],
     },
     campaignClaimHandler
+  )
+
+  server.get(
+    '/claim/:claimId',
+    {
+      schema: {
+        response: {
+          200: ClaimResponseSchema,
+          400: ErrorSchema,
+        },
+        params: Type.Object({
+          claimId: Type.String(),
+        }),
+        tags: ['campaign'],
+        summary: 'Get a Claim detail',
+        description: 'Get a Claim detail',
+        produces: ['application/json'],
+        security: [
+          {
+            apiKey: [],
+          }
+        ],
+      },
+      preHandler: [async (request, reply) => authenticate(request, reply, null)],
+    },
+    campaignGetClaimDetailHandler
   )
 };
 
