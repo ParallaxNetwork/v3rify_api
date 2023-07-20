@@ -235,65 +235,65 @@ export const campaignClaimHandler = async (request: FastifyRequest, reply: Fasti
     });
 
     // check campaign quota and user quota
-    // if (campaign.totalQuota !== 0 || campaign.perUserQuota !== 0 || campaign.perUserDailyQuota !== 0) {
-    //   const currentUsageCount = await prismaClient.merchantCampaignUsage.count({
-    //     where: {
-    //       campaignId: campaignId,
-    //     },
-    //   });
+    if (campaign.totalQuota !== 0 || campaign.perUserQuota !== 0 || campaign.perUserDailyQuota !== 0) {
+      const currentUsageCount = await prismaClient.merchantCampaignUsage.count({
+        where: {
+          campaignId: campaignId,
+        },
+      });
 
-    //   console.log(currentUsageCount);
+      console.log(currentUsageCount);
 
-    //   if (campaign.totalQuota !== 0) {
-    //     if (currentUsageCount >= campaign.totalQuota) {
-    //       console.log('quota exceeded');
-    //       return reply.code(400).send({
-    //         code: 'quota-exceeded',
-    //         error: 'Bad Request',
-    //         message: 'All quota for this campaign has been claimed',
-    //       });
-    //     }
-    //   }
+      if (campaign.totalQuota !== 0) {
+        if (currentUsageCount >= campaign.totalQuota) {
+          console.log('quota exceeded');
+          return reply.code(400).send({
+            code: 'quota-exceeded',
+            error: 'Bad Request',
+            message: 'All quota for this campaign has been claimed',
+          });
+        }
+      }
 
-    //   if (campaign.perUserQuota !== 0) {
-    //     const userUsageCount = await prismaClient.merchantCampaignUsage.count({
-    //       where: {
-    //         userId: request.user.id,
-    //         campaignId: campaignId,
-    //       },
-    //     });
+      if (campaign.perUserQuota !== 0) {
+        const userUsageCount = await prismaClient.merchantCampaignUsage.count({
+          where: {
+            userId: request.user.id,
+            campaignId: campaignId,
+          },
+        });
 
-    //     if (userUsageCount >= campaign.perUserQuota) {
-    //       console.log('quota exceeded');
-    //       return reply.code(400).send({
-    //         code: 'quota-exceeded',
-    //         error: 'Bad Request',
-    //         message: `Your quota exceeded for this campaign, you can only claim ${campaign.perUserQuota} times`,
-    //       });
-    //     }
-    //   }
+        if (userUsageCount >= campaign.perUserQuota) {
+          console.log('quota exceeded');
+          return reply.code(400).send({
+            code: 'quota-exceeded',
+            error: 'Bad Request',
+            message: `Your quota exceeded for this campaign, you can only claim ${campaign.perUserQuota} times`,
+          });
+        }
+      }
 
-    //   if (campaign.perUserDailyQuota !== 0) {
-    //     const userUsageCount = await prismaClient.merchantCampaignUsage.count({
-    //       where: {
-    //         userId: request.user.id,
-    //         campaignId: campaignId,
-    //         createdAt: {
-    //           gte: new Date(new Date().setHours(0, 0, 0, 0)),
-    //         },
-    //       },
-    //     });
+      if (campaign.perUserDailyQuota !== 0) {
+        const userUsageCount = await prismaClient.merchantCampaignUsage.count({
+          where: {
+            userId: request.user.id,
+            campaignId: campaignId,
+            createdAt: {
+              gte: new Date(new Date().setHours(0, 0, 0, 0)),
+            },
+          },
+        });
 
-    //     if (userUsageCount >= campaign.perUserDailyQuota) {
-    //       console.log('quota exceeded');
-    //       return reply.code(400).send({
-    //         code: 'quota-exceeded',
-    //         error: 'Bad Request',
-    //         message: `Your daily quota exceeded for this campaign, you can only claim ${campaign.perUserDailyQuota} times per day`,
-    //       });
-    //     }
-    //   }
-    // }
+        if (userUsageCount >= campaign.perUserDailyQuota) {
+          console.log('quota exceeded');
+          return reply.code(400).send({
+            code: 'quota-exceeded',
+            error: 'Bad Request',
+            message: `Your daily quota exceeded for this campaign, you can only claim ${campaign.perUserDailyQuota} times per day`,
+          });
+        }
+      }
+    }
 
     // collect unique ( address, chain } from nfts
     const uniqueNfts = nfts.reduce((acc, curr) => {
