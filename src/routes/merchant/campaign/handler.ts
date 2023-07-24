@@ -90,6 +90,7 @@ export const campaignCreateHandler = async (request: FastifyRequest, reply: Fast
       data: {
         name: body.name,
         description: body.description,
+        image: body.image,
         isActive: isActive,
 
         startPeriod: unixToDate(body.startDate),
@@ -103,6 +104,7 @@ export const campaignCreateHandler = async (request: FastifyRequest, reply: Fast
           create: body.benefits.map((benefit) => ({
             type: benefit.type,
             value: benefit.value,
+            description: benefit.description
           })),
         },
         // requirements: {
@@ -217,6 +219,7 @@ export const campaignUpdateHandler = async (request: FastifyRequest, reply: Fast
           create: body.benefits.map((benefit) => ({
             type: benefit.type,
             value: benefit.value,
+            description: benefit.description
           })),
         },
         requirements: {

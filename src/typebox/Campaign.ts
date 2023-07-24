@@ -48,7 +48,7 @@ const CampaignBenefitItem = Type.Object({
   id: Type.String(),
   type: Type.Union([Type.Literal('free-item'), Type.Literal('discount')]),
   value: Type.String(),
-  description: Type.String(),
+  description: Type.Optional(Type.String()),
 });
 
 
