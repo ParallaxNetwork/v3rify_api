@@ -46,3 +46,7 @@ declare interface NftPointer {
   chainId: number
   tokenId: string
 }
+
+declare interface OatPointer {
+  id: string
+}

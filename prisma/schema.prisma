@@ -12,213 +12,256 @@ datasource db {
 
 // ==================== User ====================
 model User {
-  id              String    @id @default(uuid())
-  walletAddress   String    @unique
-  name            String?
-  ensName         String?
-  email           String?   
-  
-  roles           UserRole[]
+  id            String  @id @default(uuid())
+  walletAddress String  @unique
+  name          String?
+  ensName       String?
+  email         String?
 
-  campaignUsages      MerchantCampaignUsage[]
+  roles UserRole[]
 
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  campaignUsages MerchantCampaignUsage[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model UserRole {
-  id              String    @id @default(uuid())
+  id String @id @default(uuid())
 
-  userId          String    
-  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
+
 // ==================== User End ====================
 
 // ==================== Merchant ====================
 model Merchant {
-  id              String          @id @default(uuid())
-  username        String?         @unique
-  passwordHash    String?
-  walletAddress   String?         @unique
-  type            String          
+  id            String  @id @default(uuid())
+  username      String? @unique
+  passwordHash  String?
+  walletAddress String? @unique
+  type          String
 
-  email           String?         
-  phoneNumber     String?
+  email       String?
+  phoneNumber String?
 
-  shops           MerchantShop[]
+  shops MerchantShop[]
 
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model MerchantWhitelist {
-  id              String    @id @default(uuid())
-  type            String    @default("wallet")
-  value           String
+  id    String @id @default(uuid())
+  type  String @default("wallet")
+  value String
 }
 
 model MerchantShop {
-  id              String    @id @default(uuid())
-  name            String
-  address         String
-  description     String?
-  phoneNumber     String
-  email           String
-  image           String?
+  id          String  @id @default(uuid())
+  name        String
+  address     String
+  description String?
+  phoneNumber String
+  email       String
+  image       String?
 
-  merchantUserId  String    
-  merchant        Merchant  @relation(fields: [merchantUserId], references: [id], onDelete: Cascade)
-  campaigns       MerchantCampaign[]  
+  merchantUserId String
+  merchant       Merchant           @relation(fields: [merchantUserId], references: [id], onDelete: Cascade)
+  campaigns      MerchantCampaign[]
 
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model MerchantCampaign {
-  id              String    @id @default(uuid())
-  name            String    
-  description     String
-  image           String?
+  id          String  @id @default(uuid())
+  name        String
+  description String
+  image       String?
 
-  startPeriod     DateTime
-  endPeriod       DateTime
+  startPeriod DateTime
+  endPeriod   DateTime
 
-  requirementOperator   String    @default("or")
+  requirementOperator String @default("or")
 
-  totalQuota        Int?       @default(0) 
-  perUserQuota      Int?       @default(0)
-  perUserDailyQuota Int?       @default(0)
+  totalQuota        Int? @default(0)
+  perUserQuota      Int? @default(0)
+  perUserDailyQuota Int? @default(0)
 
   // paymentMinimum  Int       @default(0)
   // paymentUnit     String    @default("IDR")
   // discountMaximum Int       @default(0)
   // discountUnit    String    @default("IDR")
 
-  shopId          String
-  shop            MerchantShop  @relation(fields: [shopId], references: [id], onDelete: Cascade)
-  requirements    MerchantCampaignRequirement[]
-  benefits        MerchantCampaignBenefit[]
-  usages          MerchantCampaignUsage[]
+  shopId       String
+  shop         MerchantShop                  @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  requirements MerchantCampaignRequirement[]
+  benefits     MerchantCampaignBenefit[]
+  usages       MerchantCampaignUsage[]
 
-  isActive        Boolean   @default(true)
+  isActive Boolean @default(true)
 
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
+// model MerchantCampaignRequirement {
+//   id               String                            @id @default(uuid())
+//   network          String                            @default("ethereum")
+//   minimumHold      Int                               @default(1)
+//   customConditions MerchantCampaignCustomCondition[]
+//   type             String                            @default("NFT") // can be "NFT" | "OAT"
+
+//   campaignId String
+//   campaign   MerchantCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+//   contractAddress String?
+//   nftCollection   NftCollection? @relation(fields: [contractAddress], references: [address], onDelete: Cascade)
+
+//   // galxeCampaignId String?
+//   // galxeCampaign   GalxeCampaign? @relation(fields: [galxeCampaignId], references: [id], onDelete: Cascade)
+
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+// }
+
 model MerchantCampaignRequirement {
-  id                String        @id @default(uuid())
-  network           String        @default("ethereum")
-  minimumHold       Int           @default(1)
-  customConditions  MerchantCampaignCustomCondition[] 
+  id               String                            @id @default(uuid())
+  network          String                            @default("ethereum")
+  minimumHold      Int                               @default(1)
 
-  campaignId            String    
-  campaign              MerchantCampaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
-  contractAddress       String
-  nftCollection         NftCollection @relation(fields: [contractAddress], references: [address], onDelete: Cascade)
-
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  customConditions MerchantCampaignCustomCondition[]
+  type             String                            @default("NFT") // can be "NFT" | "OAT"
+  
+  campaignId String
+  campaign   MerchantCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  
+  contractAddress String?
+  nftCollection   NftCollection? @relation(fields: [contractAddress], references: [address], onDelete: Cascade)
+  
+  galxeCampaignId String?
+  galxeCampaign   GalxeCampaign? @relation(fields: [galxeCampaignId], references: [campaignId], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model MerchantCampaignCustomCondition {
-  id              String    @id @default(uuid())
-  type            String    @default("balance")
-  properties      Json     
+  id         String @id @default(uuid())
+  type       String @default("balance")
+  properties Json
 
-  campaignId          String
-  campaign            MerchantCampaignRequirement  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  campaignId String
+  campaign   MerchantCampaignRequirement @relation(fields: [campaignId], references: [id], onDelete: Cascade)
 
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model MerchantCampaignBenefit {
-  id              String    @id @default(uuid())
-  type            String    
-  value           String    
-  description     String?
+  id          String  @id @default(uuid())
+  type        String
+  value       String
+  description String?
 
-  campaignId      String
-  campaign        MerchantCampaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  campaignId String
+  campaign   MerchantCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
 
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model MerchantCampaignUsage {
-  id              String    @id @default(uuid())
-  
+  id String @id @default(uuid())
+
   // nftUsages       NftUsage[]
 
-  campaignId      String
-  campaign        MerchantCampaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
-  userId          String
-  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+  campaignId String
+  campaign   MerchantCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model NftCollection {
-  id              String    @default(uuid())
-  address         String    @unique
-  tokenType       String    @default("ERC721")
-  chain           String    @default("ethereum")
-  name            String
-  symbol          String
-  description     String?
-  image           String?
-  opensea         Json
-  rarity          Json
+  id          String  @default(uuid())
+  address     String  @unique
+  tokenType   String  @default("ERC721")
+  chain       String  @default("ethereum")
+  name        String
+  symbol      String
+  description String?
+  image       String?
+  opensea     Json
+  rarity      Json
 
   campaignRequirements MerchantCampaignRequirement[]
-  nfts                Nft[]
+  nfts                 Nft[]
 
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@id([address, chain])
 }
 
 model Nft {
-  id                String         @default(uuid())
-  chain             String         @default("ethereum")
-  tokenId           String
-  type              String         @default("ERC721")
-  name              String?
-  attributes        Json?
+  id         String  @default(uuid())
+  chain      String  @default("ethereum")
+  tokenId    String
+  type       String  @default("ERC721")
+  name       String?
+  attributes Json?
 
   collectionAddress String
-  collection        NftCollection  @relation(fields: [collectionAddress], references: [address], onDelete: Cascade)
+  collection        NftCollection @relation(fields: [collectionAddress], references: [address], onDelete: Cascade)
 
   @@id([tokenId, chain, collectionAddress])
 }
 
 model NftUsage {
-  id              String    @id @default(uuid())
-  nftId           String
-  tokenId         String
-  chain           String
+  id      String @id @default(uuid())
+  nftId   String
+  tokenId String
+  chain   String
 
   // campaignUsageId String
   // campaignUsage   MerchantCampaignUsage  @relation(fields: [campaignUsageId], references: [id], onDelete: Cascade)
+}
+
+model GalxeCampaign {
+  id           String  @id @default(uuid())  
+  campaignId   String  @unique
+  chain        String
+  name         String
+  type         String
+  status       String
+  description  String?
+  thumbnail    String?
+  numNFTMinted Int?
+
+  requirements MerchantCampaignRequirement[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 // ==================== Merchant End ====================
 
 // ==================== Common ====================
 model UploadedFile {
-  id              String    @id @default(uuid())
-  path            String    @unique
-  type            String
-  url             String
+  id   String @id @default(uuid())
+  path String @unique
+  type String
+  url  String
 
-  userId          String
+  userId String
 
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
+
 // ==================== Common End ====================

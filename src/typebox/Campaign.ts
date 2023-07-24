@@ -17,12 +17,32 @@ const NFTTraitsCondition = Type.Object({
 
 const CampaignCustomCondition = Type.Union([TokenIdsCondition, NFTTraitsCondition]);
 
-const CampaignRequirementItem = Type.Object({
-  contractAddress: Type.String(),
+// NFT Requirement
+const NFTPropertiesSchema = Type.Object({
+  type: Type.Literal('NFT'),
+  id: Type.String(),
   minimumHold: Type.Number(),
+  contractAddress: Type.String(),
   network: Type.String(),
-  customConditions: Type.Array(CampaignCustomCondition),
+  customConditions: Type.Optional(Type.Array(CampaignCustomCondition)),
 });
+
+// OAT Requirement
+const OATPropertiesSchema = Type.Object({
+  type: Type.Literal('OAT'),
+  id: Type.String(),
+  galxeCampaignId: Type.String(),
+  minimumHold: Type.Number(),
+});
+
+const CampaignRequirementItem = Type.Union([NFTPropertiesSchema, OATPropertiesSchema]);
+
+// const CampaignRequirementItem = Type.Object({
+//   contractAddress: Type.String(),
+//   minimumHold: Type.Number(),
+//   network: Type.String(),
+//   customConditions: Type.Array(CampaignCustomCondition),
+// });
 
 const CampaignBenefitItem = Type.Object({
   id: Type.String(),
@@ -30,6 +50,7 @@ const CampaignBenefitItem = Type.Object({
   value: Type.String(),
   description: Type.String(),
 });
+
 
 export const CampaignCreateRequestSchema = Type.Object({
   name: Type.String(),
@@ -71,7 +92,24 @@ export const ClaimResponseSchema = Type.Object({
     startPeriod: Type.Number(),
     endPeriod: Type.Number(),
 
-
     shopId: Type.String(),
+  }),
+});
+
+export const CampaignTransactionResponseSchema = Type.Object({
+  id: Type.String(),
+  campaignId: Type.String(),
+  userId: Type.String(),
+  createdAt: Type.String(),
+  updatedAt: Type.String(),
+  campaign: Type.Object({
+    id: Type.String(),
+    name: Type.String(),
+    description: Type.String(),
+    image: Type.String(),
+  }),
+  user: Type.Object({
+    id: Type.String(),
+    walletAddress: Type.String(),
   }),
 });

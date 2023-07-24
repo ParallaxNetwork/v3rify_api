@@ -1,6 +1,7 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 
 import { prismaClient } from '../../../prisma/index.js';
+import { getTimeLimitByPeriod } from '../../../utils/dateUtils.js';
 
 export const shopCreateHandler = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
@@ -124,6 +125,71 @@ export const shopUpdateShopByIdHandler = async (request: FastifyRequest, reply: 
     });
 
     return reply.code(200).send(updatedShop);
+  } catch (error) {
+    console.log(error);
+    return reply.code(500).send({
+      code: 'internal-server-error',
+      error: 'internal-server-error',
+      message: 'Internal server error',
+    });
+  }
+};
+
+export const shopGetAnalyticsHandler = async (request: FastifyRequest, reply: FastifyReply) => {
+  try {
+    const { shopId } = request.query as {
+      shopId: string;
+    };
+
+    const allTransactions = await prismaClient.merchantCampaignUsage.findMany({
+      where: {
+        campaign: {
+          shopId: shopId,
+        },
+      },
+      select: {
+        id: true,
+        createdAt: true,
+        user: {
+          select: {
+            id: true,
+            walletAddress: true,
+          },
+        },
+      },
+    });
+
+    const totalTransaction = allTransactions.length;
+    const totalAddressClaimed = new Set(allTransactions.map((transaction) => transaction.user.walletAddress)).size;
+
+    const analytics: ShopAnalytics = {
+      totalClaimed: {
+        total: totalTransaction,
+        periodicTotal: [
+          {
+            value: 'today',
+            total: allTransactions.filter((transaction) => transaction.createdAt > getTimeLimitByPeriod('today'))
+              .length,
+          },
+          {
+            value: 'week',
+            total: allTransactions.filter((transaction) => transaction.createdAt > getTimeLimitByPeriod('week')).length,
+          },
+          {
+            value: 'month',
+            total: allTransactions.filter((transaction) => transaction.createdAt > getTimeLimitByPeriod('month'))
+              .length,
+          },
+          {
+            value: 'year',
+            total: allTransactions.filter((transaction) => transaction.createdAt > getTimeLimitByPeriod('year')).length,
+          },
+        ],
+        totalAddressClaimed: totalAddressClaimed,
+      },
+    };
+
+    return reply.code(200).send(analytics);
   } catch (error) {
     console.log(error);
     return reply.code(500).send({

@@ -4,12 +4,14 @@ import { FastifyPluginAsync, FastifyReply, FastifyRequest } from 'fastify';
 import { authenticate } from '../../../middleware/auth.js';
 import {
   shopCreateHandler,
+  shopGetAnalyticsHandler,
   shopGetMyShopsHandler,
   shopGetShopByIdHandler,
   shopUpdateShopByIdHandler,
 } from './handler.js';
 import { validateCreateShopRequest } from './helpers.js';
 import { ErrorSchema, ShopType } from '../../../typebox/common.js';
+import { ShopAnalyticsResponseSchema } from '../../../typebox/Shop.js';
 
 const shopRoutes: FastifyPluginAsync = async (server) => {
   server.post(
@@ -172,6 +174,35 @@ const shopRoutes: FastifyPluginAsync = async (server) => {
       preHandler: [async (request, reply) => authenticate(request, reply, null)],
     },
     shopUpdateShopByIdHandler,
+  );
+
+  server.get(
+    '/analytics',
+    {
+      schema: {
+        querystring: Type.Object({
+          shopId: Type.String({
+            description: 'The id of the shop',
+            default: 'testing_shop',
+          }),
+        }),
+        response: {
+          200: ShopAnalyticsResponseSchema,
+          400: ErrorSchema,
+        },
+        tags: ['merchant'],
+        summary: 'Get analytics of a shop by its id',
+        description: 'Get analytics of a shop by its id',
+        produces: ['application/json'],
+        security: [
+          {
+            apiKey: [],
+          },
+        ],
+      },
+      preHandler: [async (request, reply) => authenticate(request, reply, null)],
+    },
+    shopGetAnalyticsHandler,
   );
 };
 

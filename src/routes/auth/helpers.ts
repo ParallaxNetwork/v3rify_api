@@ -29,6 +29,7 @@ export const generateUserToken = async (user: User) => {
       id: user.id,
       type: 'wallet',
       seed: nanoid(5),
+      walletAddress: user.walletAddress
     },
     JWT_SECRET,
     {

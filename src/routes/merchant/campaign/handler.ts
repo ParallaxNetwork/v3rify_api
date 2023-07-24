@@ -31,6 +31,7 @@ export const campaignGetHandler = async (request: FastifyRequest, reply: Fastify
                 description: true,
               },
             },
+            galxeCampaign: true,
           },
         },
         shop: true,
@@ -40,6 +41,7 @@ export const campaignGetHandler = async (request: FastifyRequest, reply: Fastify
         createdAt: 'desc',
       },
     });
+
 
     reply.code(200).send(campaigns);
   } catch (error) {
@@ -56,6 +58,8 @@ export const campaignCreateHandler = async (request: FastifyRequest, reply: Fast
   try {
     const body = request.body as CampaignCreateRequest;
     const { id: userId } = request.user;
+
+    console.log(body);
 
     const shop = await prismaClient.merchantShop.findUnique({
       where: {
@@ -101,18 +105,43 @@ export const campaignCreateHandler = async (request: FastifyRequest, reply: Fast
             value: benefit.value,
           })),
         },
+        // requirements: {
+        //   create: body.requirements.map((requirement) => ({
+        //     contractAddress: requirement.contractAddress.toLowerCase(),
+        //     network: requirement.network,
+        //     minimumHold: requirement.minimumHold,
+        //     customConditions: {
+        //       create: requirement.customConditions.map((customCondition) => ({
+        //         type: customCondition.type,
+        //         properties: customCondition as any,
+        //       })),
+        //     },
+        //   })),
+        // },
         requirements: {
-          create: body.requirements.map((requirement) => ({
-            contractAddress: requirement.contractAddress.toLowerCase(),
-            network: requirement.network,
-            minimumHold: requirement.minimumHold,
-            customConditions: {
-              create: requirement.customConditions.map((customCondition) => ({
-                type: customCondition.type,
-                properties: customCondition as any,
-              })),
-            },
-          })),
+          create: body.requirements.map((requirement) => {
+            if (requirement.type === 'NFT') {
+              return {
+                type: requirement.type,
+                contractAddress: requirement.contractAddress.toLowerCase(),
+                network: requirement.network,
+                minimumHold: requirement.minimumHold,
+                customConditions: {
+                  create: requirement.customConditions.map((customCondition) => ({
+                    type: customCondition.type,
+                    properties: customCondition as any,
+                  })),
+                },
+              };
+            } else if (requirement.type === 'OAT') {
+              return {
+                type: requirement.type,
+                galxeCampaignId: requirement.galxeCampaignId,
+                minimumHold: requirement.minimumHold,
+              };
+            }
+            return {}; // or throw an error for unsupported type
+          }),
         },
         shopId: body.shopId,
       },
@@ -192,17 +221,30 @@ export const campaignUpdateHandler = async (request: FastifyRequest, reply: Fast
         },
         requirements: {
           deleteMany: {},
-          create: body.requirements.map((requirement) => ({
-            contractAddress: requirement.contractAddress.toLowerCase(),
-            network: requirement.network,
-            minimumHold: requirement.minimumHold,
-            customConditions: {
-              create: requirement.customConditions.map((customCondition) => ({
-                type: customCondition.type,
-                properties: customCondition as any,
-              })),
-            },
-          })),
+          create: body.requirements.map((requirement) => {
+            if (requirement.type === 'NFT') {
+              return {
+                type: requirement.type,
+                contractAddress: requirement.contractAddress.toLowerCase(),
+                network: requirement.network,
+                minimumHold: requirement.minimumHold,
+                customConditions: {
+                  create: requirement.customConditions.map((customCondition) => ({
+                    type: customCondition.type,
+                    properties: customCondition as any,
+                  })),
+                },
+              };
+            } else if (requirement.type === 'OAT') {
+              return {
+                type: requirement.type,
+                galxeCampaignId: requirement.galxeCampaignId,
+                minimumHold: requirement.minimumHold,
+              };
+            }
+            
+            throw new Error('Unsupported requirement type');
+          }),
         },
         shopId: body.shopId,
       },
@@ -221,12 +263,18 @@ export const campaignUpdateHandler = async (request: FastifyRequest, reply: Fast
 
 export const campaignClaimHandler = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
-    const walletAddress = '0x278A2d5B5C8696882d1D2002cE107efc74704ECf';
+    // const walletAddress = '0x278A2d5B5C8696882d1D2002cE107efc74704ECf';
+    const {walletAddress } = request.user;
 
-    const { campaignId, nfts } = request.body as {
+    const { campaignId, nfts, oats } = request.body as {
       campaignId: string;
       nfts: NftPointer[];
+      oats: OatPointer[];
     };
+
+    console.log({
+      campaignId, nfts, oats
+    })
 
     const campaign = await prismaClient.merchantCampaign.findUnique({
       where: {
@@ -241,8 +289,6 @@ export const campaignClaimHandler = async (request: FastifyRequest, reply: Fasti
           campaignId: campaignId,
         },
       });
-
-      console.log(currentUsageCount);
 
       if (campaign.totalQuota !== 0) {
         if (currentUsageCount >= campaign.totalQuota) {
@@ -362,9 +408,8 @@ export const campaignClaimHandler = async (request: FastifyRequest, reply: Fasti
       data: {
         campaignId: campaignId,
         userId: request.user.id,
-      }
+      },
     });
-
 
     return reply.code(200).send(usage.id);
   } catch (error) {
@@ -395,7 +440,7 @@ export const campaignGetClaimDetailHandler = async (request: FastifyRequest, rep
       },
     });
 
-    if(usage.userId !== request.user.id) {
+    if (usage.userId !== request.user.id) {
       return reply.code(400).send({
         code: 'forbidden',
         error: 'Bad Request',
@@ -407,4 +452,65 @@ export const campaignGetClaimDetailHandler = async (request: FastifyRequest, rep
   } catch (error) {
     console.log(error);
   }
+};
+
+export const campaignGetTransactionByShopHandler = async (request: FastifyRequest, reply: FastifyReply) => {
+  const { id } = request.user;
+  const { shopId } = request.query as { shopId: string };
+
+  // get current shop and verify if it belongs to the user
+  const shop = await prismaClient.merchantShop.findUnique({
+    where: {
+      id: shopId,
+    },
+    select: {
+      id: true,
+      merchantUserId: true,
+    },
+  });
+
+  if (!shop) {
+    return reply.code(400).send({
+      code: 'invalid-shop-id',
+      error: 'Bad Request',
+      message: 'Invalid shop id',
+    });
+  }
+
+  if (shop.merchantUserId !== id) {
+    return reply.code(400).send({
+      code: 'unauthorized',
+      error: 'Bad Request',
+      message: 'Unauthorized to view this shop',
+    });
+  }
+
+  const transactions = await prismaClient.merchantCampaignUsage.findMany({
+    where: {
+      campaign: {
+        shopId: shopId,
+      },
+    },
+    include: {
+      campaign: {
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          image: true,
+        },
+      },
+      user: {
+        select: {
+          id: true,
+          walletAddress: true,
+        },
+      },
+    },
+    orderBy: {
+      createdAt: 'desc',
+    },
+  });
+
+  return reply.code(200).send(transactions);
 };

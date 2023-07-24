@@ -3,8 +3,20 @@ import { FastifyPluginAsync, FastifyReply, FastifyRequest } from 'fastify';
 
 import { authenticate } from '../../../middleware/auth.js';
 import { ErrorSchema } from '../../../typebox/common.js';
-import { campaignClaimHandler, campaignCreateHandler, campaignGetClaimDetailHandler, campaignGetHandler, campaignUpdateHandler } from './handler.js';
-import { CampaignCreateRequestSchema, CampaignSchema, ClaimResponseSchema } from '../../../typebox/Campaign.js';
+import {
+  campaignClaimHandler,
+  campaignCreateHandler,
+  campaignGetClaimDetailHandler,
+  campaignGetHandler,
+  campaignGetTransactionByShopHandler,
+  campaignUpdateHandler,
+} from './handler.js';
+import {
+  CampaignCreateRequestSchema,
+  CampaignSchema,
+  CampaignTransactionResponseSchema,
+  ClaimResponseSchema,
+} from '../../../typebox/Campaign.js';
 
 const campaignRoutes: FastifyPluginAsync = async (server) => {
   server.get(
@@ -98,18 +110,28 @@ const campaignRoutes: FastifyPluginAsync = async (server) => {
     campaignUpdateHandler,
   );
 
-
   server.post(
     '/claim',
     {
       schema: {
         body: Type.Object({
-          campaignId: Type.String(),  
-          nfts: Type.Array(Type.Object({
-            address: Type.String(),
-            chainId: Type.Number(),
-            tokenId: Type.String(),
-          }))
+          campaignId: Type.String(),
+          nfts: Type.Optional(
+            Type.Array(
+              Type.Object({
+                address: Type.String(),
+                chainId: Type.Number(),
+                tokenId: Type.String(),
+              }),
+            ),
+          ),
+          oats: Type.Optional(
+            Type.Array(
+              Type.Object({
+                id: Type.String(),
+              }),
+            ),
+          ),
         }),
         response: {
           200: Type.String(),
@@ -122,13 +144,13 @@ const campaignRoutes: FastifyPluginAsync = async (server) => {
         security: [
           {
             apiKey: [],
-          }
+          },
         ],
       },
       preHandler: [async (request, reply) => authenticate(request, reply, null)],
     },
-    campaignClaimHandler
-  )
+    campaignClaimHandler,
+  );
 
   server.get(
     '/claim/:claimId',
@@ -148,13 +170,42 @@ const campaignRoutes: FastifyPluginAsync = async (server) => {
         security: [
           {
             apiKey: [],
-          }
+          },
         ],
       },
       preHandler: [async (request, reply) => authenticate(request, reply, null)],
     },
-    campaignGetClaimDetailHandler
-  )
+    campaignGetClaimDetailHandler,
+  );
+
+  server.get(
+    '/transaction',
+    {
+      schema: {
+        response: {
+          200: Type.Array(CampaignTransactionResponseSchema),
+          400: ErrorSchema,
+        },
+        querystring: Type.Object({
+          shopId: Type.String({
+            default: '123',
+            description: 'Shop ID',
+          }),
+        }),
+        tags: ['campaign'],
+        summary: 'Get all transaction related to a shop',
+        description: 'Get all transaction related to a shop',
+        produces: ['application/json'],
+        security: [
+          {
+            apiKey: [],
+          },
+        ],
+      },
+      preHandler: [async (request, reply) => authenticate(request, reply, null)],
+    },
+    campaignGetTransactionByShopHandler,
+  );
 };
 
 export default campaignRoutes;
