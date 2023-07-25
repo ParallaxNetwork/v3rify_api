@@ -45,3 +45,23 @@ export const infuraGetOwnedNfts = async (
 
   return res.data as InfuraNftModel;
 };
+
+export const infuraGetOwnersOfNft = async (
+  chainId: number,
+  address: string,
+  cursor?: string,
+): Promise<any> => {
+  const res = await axios({
+    method: 'GET',
+    url: baseUrl + `/networks/${chainId}/nfts/${address}/owners`,
+    headers: {
+      Authorization: authHeader,
+    },
+    params: {
+      cursor: cursor || undefined,
+      tokenAddress: address,
+    },
+  })
+
+  return res.data
+}

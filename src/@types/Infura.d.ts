@@ -30,6 +30,27 @@ declare interface InfuraNftModel {
   assets: InfuraAssetsModel[];
 }
 
+declare interface InfuraOwnersModel {
+  total: number;
+  pageNumber: number;
+  pageSize: number;
+  cursor: string | null;
+  network: string;
+  owners: {
+    tokenAddress: string;
+    tokenId: string;
+    amount: string;
+    ownerOf: string;
+    tokenHash: string;
+    blockNumberMinted: string;
+    blockNumber: string;
+    contractType: string;
+    name: string;
+    symbol: string;
+    metadata: InfuraMetadataModel;
+  }[];
+}
+
 declare interface RarityModel {
   attributes: {
     trait_type: string;
@@ -49,4 +70,5 @@ declare interface NftPointer {
 
 declare interface OatPointer {
   id: string
+  campaignId: string
 }

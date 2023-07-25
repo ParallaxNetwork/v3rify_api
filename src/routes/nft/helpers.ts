@@ -1,4 +1,4 @@
-import { infuraGetNftsFromCollection, infuraGetOwnedNfts } from '../../utils/infura/infuraNft.js';
+import { infuraGetNftsFromCollection, infuraGetOwnedNfts, infuraGetOwnersOfNft } from '../../utils/infura/infuraNft.js';
 import { convertChainStringToId } from '../../utils/miscUtils.js';
 
 export const infuraGetAllNfts = async (address: string, chain: string): Promise<InfuraAssetsModel[]> => {
@@ -73,7 +73,11 @@ export const summarizeNftAttributes = (nfts: InfuraAssetsModel[]): RarityModel =
   return rarity;
 };
 
-export const infuraGetAllOwnedNfts = async (address: string, chainId: number, tokenAddresses?: string[]): Promise<InfuraAssetsModel[]> => {
+export const infuraGetAllOwnedNfts = async (
+  address: string,
+  chainId: number,
+  tokenAddresses?: string[],
+): Promise<InfuraAssetsModel[]> => {
   try {
     const nfts = [] as InfuraAssetsModel[];
     let cursor = null;
@@ -95,11 +99,55 @@ export const infuraGetAllOwnedNfts = async (address: string, chainId: number, to
 
     // filters out if nft.metadata is null
     const filteredNfts = nfts.filter(
-      (nft) => nft.contract && nft.tokenId && nft.type && nft.metadata && nft.metadata.name && nft.metadata.name && nft.metadata.image
+      (nft) =>
+        nft.contract &&
+        nft.tokenId &&
+        nft.type &&
+        nft.metadata &&
+        nft.metadata.name &&
+        nft.metadata.name &&
+        nft.metadata.image,
     );
 
     return filteredNfts;
   } catch (error) {
     console.log(error);
+  }
+};
+
+export const infuraGetAllOwnersOfNft = async (address: string, chain:string): Promise<any> => {
+  try {
+    const owners = [];
+    let cursor = null;
+
+    do {
+      const response = await infuraGetOwnersOfNft(convertChainStringToId(chain), address, cursor);
+
+      const { owners: newOwners, cursor: newCursor } = response;
+
+      owners.push(...newOwners);
+      cursor = newCursor;
+
+      console.log(`Fetched ${owners.length} owners in total`);
+    } while (cursor !== null);
+
+    // make owners.metadata JSON.parse
+    owners.forEach((owner) => {
+      owner.metadata = JSON.parse(owner.metadata);
+    });
+
+    console.log(owners);
+
+    return owners;
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+export const generateOwnershipPointer = (params: OwnershipPointerParams): string => {
+  if (params.type === 'NFT') {
+    return `NFT-${params.chainId}-${params.address}`;
+  }else if(params.type === 'OAT'){
+    return `OAT-${params.campaignId}`
   }
 };

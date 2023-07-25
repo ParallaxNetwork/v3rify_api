@@ -1,7 +1,7 @@
 import { FastifyReply, FastifyRequest } from 'fastify';
 import { prismaClient } from '../../prisma/index.js';
 import { alchemyClient } from '../../utils/alchemy/index.js';
-import { infuraGetAllNfts, infuraGetAllOwnedNfts, summarizeNftAttributes } from './helpers.js';
+import { generateOwnershipPointer, infuraGetAllNfts, infuraGetAllOwnedNfts, infuraGetAllOwnersOfNft, summarizeNftAttributes } from './helpers.js';
 import { fetchGalxeCampaign, fetchGalxeProfileOATs } from '../../utils/galxe/graphql.js';
 import { manyMinutesAgo } from '../../utils/dateUtils.js';
 
@@ -17,6 +17,8 @@ export const nftGetCollectionMetadataHandler = async (request: FastifyRequest, r
         },
       },
     });
+
+    // const test = await infuraGetAllOwnersOfNft(id, chain);
 
     if (existing) {
       // if data is updated within 15 minutes, return existing
@@ -184,9 +186,10 @@ export const nftGetOATMetadataHandler = async (request: FastifyRequest, reply: F
 
 export const nftGetOwnedNftsHandler = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
+    const { id } = request.user as { id: string };
     const { address } = request.query as { address: string };
 
-    const ownedNfts = [];
+    const ownedNfts: InfuraAssetsModel[] = [];
 
     const chainIds = [1, 137];
 
@@ -194,6 +197,32 @@ export const nftGetOwnedNftsHandler = async (request: FastifyRequest, reply: Fas
       const nfts = await infuraGetAllOwnedNfts(address, chainIds[i]);
       ownedNfts.push(...nfts);
     }
+
+    console.log(ownedNfts);
+
+    // replace assetOwnership
+    await prismaClient.assetOwnership.deleteMany({
+      where: {
+        walletAddress: address,
+        type: 'NFT',
+      },
+    });
+
+    await prismaClient.assetOwnership.createMany({
+      data: ownedNfts.map((nft) => {
+        return {
+          pointer: generateOwnershipPointer({
+            type: 'NFT',
+            chainId: nft.chainId,
+            address: nft.contract
+          }),
+          walletAddress: address,
+          chainId: nft.chainId,
+          type: 'NFT',
+        };
+      }),
+      skipDuplicates: true,
+    });
 
     return reply.code(200).send(ownedNfts);
   } catch (error) {
@@ -212,6 +241,36 @@ export const nftGetOwnerOatsHandler = async (request: FastifyRequest, reply: Fas
 
     const getOATs = await fetchGalxeProfileOATs({
       address: address,
+    });
+
+    // replace assetOwnership
+    await prismaClient.assetOwnership.deleteMany({
+      where: {
+        walletAddress: address,
+        type: 'OAT',
+      },
+    });
+
+    await prismaClient.assetOwnership.createMany({
+      data: getOATs.map((oat) => {
+        let chainId = 0;
+        if (oat.campaign.chain.toLowerCase() === 'ethereum') {
+          chainId = 1;
+        } else if (oat.campaign.chain.toLowerCase() === 'matic') {
+          chainId = 137;
+        }
+
+        return {
+          pointer: generateOwnershipPointer({
+            type: 'OAT',
+            campaignId: oat.campaign.id,
+            id: oat.id,
+          }),
+          walletAddress: address,
+          chainId: chainId,
+          type: 'OAT',
+        };
+      }),
     });
 
     return reply.code(200).send(getOATs);

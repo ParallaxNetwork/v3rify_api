@@ -2,6 +2,9 @@ import { FastifyRequest, FastifyReply } from 'fastify';
 import { prismaClient } from '../../../prisma/index.js';
 import { unixToDate } from '../../../utils/dateUtils.js';
 import { infuraGetAllOwnedNfts } from '../../nft/helpers.js';
+import { generateOwnershipPointer } from '../../nft/helpers.js';
+import { getNftPointersFromCampaignRequirement } from './helpers.js';
+import { Prisma } from '@prisma/client';
 
 export const campaignGetHandler = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
@@ -41,7 +44,6 @@ export const campaignGetHandler = async (request: FastifyRequest, reply: Fastify
         createdAt: 'desc',
       },
     });
-
 
     reply.code(200).send(campaigns);
   } catch (error) {
@@ -104,7 +106,7 @@ export const campaignCreateHandler = async (request: FastifyRequest, reply: Fast
           create: body.benefits.map((benefit) => ({
             type: benefit.type,
             value: benefit.value,
-            description: benefit.description
+            description: benefit.description,
           })),
         },
         // requirements: {
@@ -219,7 +221,7 @@ export const campaignUpdateHandler = async (request: FastifyRequest, reply: Fast
           create: body.benefits.map((benefit) => ({
             type: benefit.type,
             value: benefit.value,
-            description: benefit.description
+            description: benefit.description,
           })),
         },
         requirements: {
@@ -245,7 +247,7 @@ export const campaignUpdateHandler = async (request: FastifyRequest, reply: Fast
                 minimumHold: requirement.minimumHold,
               };
             }
-            
+
             throw new Error('Unsupported requirement type');
           }),
         },
@@ -264,10 +266,21 @@ export const campaignUpdateHandler = async (request: FastifyRequest, reply: Fast
   }
 };
 
+export type CampaignPrisma = Prisma.MerchantCampaignGetPayload<{
+  include: {
+    requirements: {
+      include: {
+        nftCollection: true;
+        galxeCampaign: true;
+      };
+    };
+  };
+}>;
+
 export const campaignClaimHandler = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
     // const walletAddress = '0x278A2d5B5C8696882d1D2002cE107efc74704ECf';
-    const {walletAddress } = request.user;
+    const { walletAddress } = request.user;
 
     const { campaignId, nfts, oats } = request.body as {
       campaignId: string;
@@ -276,13 +289,23 @@ export const campaignClaimHandler = async (request: FastifyRequest, reply: Fasti
     };
 
     console.log({
-      campaignId, nfts, oats
-    })
+      campaignId,
+      nfts,
+      oats,
+    });
 
     const campaign = await prismaClient.merchantCampaign.findUnique({
       where: {
         id: campaignId,
       },
+      include: {
+        requirements: {
+          include: {
+            nftCollection: true,
+            galxeCampaign: true,
+          }
+        }
+      }
     });
 
     // check campaign quota and user quota
@@ -344,68 +367,29 @@ export const campaignClaimHandler = async (request: FastifyRequest, reply: Fasti
       }
     }
 
-    // collect unique ( address, chain } from nfts
-    const uniqueNfts = nfts.reduce((acc, curr) => {
-      const { address, chainId } = curr;
-      const key = `${address}-${chainId}`;
-      if (!acc[key]) {
-        acc[key] = curr;
+    console.log(campaign)
+
+    const requirementNftPointers = getNftPointersFromCampaignRequirement(campaign.requirements)
+    console.log(requirementNftPointers)
+
+    // get all ownerships of nfts and oats from wallet address
+    const ownerships = await prismaClient.assetOwnership.findMany({
+      where: {
+        walletAddress: walletAddress,
+        pointer: {
+          in: requirementNftPointers
+        }
       }
-      return acc;
-    }, {} as Record<string, NftPointer>);
+    })
+    console.log(ownerships)
 
-    let userOwnedNfts = [] as InfuraAssetsModel[];
-
-    for (const key in uniqueNfts) {
-      const res = await infuraGetAllOwnedNfts(walletAddress, uniqueNfts[key].chainId, [uniqueNfts[key].address]);
-      userOwnedNfts = [...userOwnedNfts, ...res];
-    }
-
-    console.log('User owned nfts', userOwnedNfts);
-
-    for (const nft of userOwnedNfts) {
-      let network = '';
-      console.log(nft.chainId);
-      if (nft.chainId === 1) {
-        network = 'ethereum';
-      } else if (nft.chainId === 137) {
-        network = 'matic';
-      }
-
-      console.log(nft);
-
-      const insertNfts = await prismaClient.nft.upsert({
-        create: {
-          tokenId: nft.tokenId,
-          chain: network,
-          type: nft.type,
-          name: nft.metadata.name,
-          attributes: nft.metadata.attributes,
-          collectionAddress: nft.contract.toLowerCase(),
-        },
-        update: {
-          attributes: nft.metadata.attributes,
-        },
-        where: {
-          tokenId_chain_collectionAddress: {
-            chain: network,
-            tokenId: nft.tokenId,
-            collectionAddress: nft.contract.toLowerCase(),
-          },
-        },
+    if(ownerships.length !== requirementNftPointers.length){
+      return reply.code(400).send({
+        code: 'invalid-ownership',
+        error: 'Bad Request',
+        message: 'Invalid ownership',
       });
-
-      console.log(insertNfts);
     }
-
-    console.log('Unique NFTs', uniqueNfts);
-
-    console.log({
-      campaignId,
-      nfts,
-    });
-
-    console.log(request.user);
 
     const usage = await prismaClient.merchantCampaignUsage.create({
       data: {
