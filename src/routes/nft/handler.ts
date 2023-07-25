@@ -214,11 +214,13 @@ export const nftGetOwnedNftsHandler = async (request: FastifyRequest, reply: Fas
           pointer: generateOwnershipPointer({
             type: 'NFT',
             chainId: nft.chainId,
-            address: nft.contract
+            address: nft.contract,
+            
           }),
           walletAddress: address,
           chainId: nft.chainId,
           type: 'NFT',
+          tokenId: nft.tokenId,
         };
       }),
       skipDuplicates: true,
@@ -269,6 +271,7 @@ export const nftGetOwnerOatsHandler = async (request: FastifyRequest, reply: Fas
           walletAddress: address,
           chainId: chainId,
           type: 'OAT',
+          tokenId: oat.id,
         };
       }),
     });
