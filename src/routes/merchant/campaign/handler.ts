@@ -1,8 +1,6 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { prismaClient } from '../../../prisma/index.js';
 import { unixToDate } from '../../../utils/dateUtils.js';
-import { infuraGetAllOwnedNfts } from '../../nft/helpers.js';
-import { generateOwnershipPointer } from '../../nft/helpers.js';
 import { getNftPointersFromCampaignRequirement } from './helpers.js';
 import { Prisma } from '@prisma/client';
 
@@ -33,6 +31,11 @@ export const campaignGetHandler = async (request: FastifyRequest, reply: Fastify
                 tokenType: true,
                 description: true,
               },
+            },
+            campaign: {
+              include: {
+                usages: true,
+              }
             },
             galxeCampaign: true,
           },
@@ -367,8 +370,6 @@ export const campaignClaimHandler = async (request: FastifyRequest, reply: Fasti
       }
     }
 
-    console.log(campaign)
-
     const requirementNftPointers = getNftPointersFromCampaignRequirement(campaign.requirements)
     console.log(requirementNftPointers)
 
@@ -381,7 +382,6 @@ export const campaignClaimHandler = async (request: FastifyRequest, reply: Fasti
         }
       }
     })
-    console.log(ownerships)
 
     if(ownerships.length !== requirementNftPointers.length){
       return reply.code(400).send({
