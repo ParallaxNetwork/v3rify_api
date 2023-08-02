@@ -35,7 +35,7 @@ export const campaignGetHandler = async (request: FastifyRequest, reply: Fastify
             campaign: {
               include: {
                 usages: true,
-              }
+              },
             },
             galxeCampaign: true,
           },
@@ -269,6 +269,59 @@ export const campaignUpdateHandler = async (request: FastifyRequest, reply: Fast
   }
 };
 
+export const campaignDeleteHandler = async (request: FastifyRequest, reply: FastifyReply) => {
+  try {
+    const { id: userId } = request.user;
+    const { id } = request.params as { id: string };
+
+    // get campaign, its id and shop only, and check if the user is the owner
+    const currCampaign = await prismaClient.merchantCampaign.findUnique({
+      where: {
+        id: id,
+      },
+      select: {
+        id: true,
+        shop: {
+          select: {
+            merchantUserId: true,
+          },
+        },
+      },
+    });
+
+    if (!currCampaign) {
+      return reply.code(400).send({
+        code: 'invalid-campaign-id',
+        error: 'Bad Request',
+        message: 'Invalid campaign id',
+      });
+    }
+
+    if (currCampaign.shop.merchantUserId !== userId) {
+      return reply.code(400).send({
+        code: 'unauthorized',
+        error: 'Bad Request',
+        message: 'Unauthorized to delete this campaign',
+      });
+    }
+
+    const campaign = await prismaClient.merchantCampaign.delete({
+      where: {
+        id: currCampaign.id,
+      },
+    });
+
+    reply.code(200).send(campaign);
+  } catch (error) {
+    console.log(error);
+    return reply.code(500).send({
+      code: 'internal-server-error',
+      error: 'internal-server-error',
+      message: 'Internal server error',
+    });
+  }
+};
+
 export type CampaignPrisma = Prisma.MerchantCampaignGetPayload<{
   include: {
     requirements: {
@@ -306,9 +359,9 @@ export const campaignClaimHandler = async (request: FastifyRequest, reply: Fasti
           include: {
             nftCollection: true,
             galxeCampaign: true,
-          }
-        }
-      }
+          },
+        },
+      },
     });
 
     // check campaign quota and user quota
@@ -370,20 +423,20 @@ export const campaignClaimHandler = async (request: FastifyRequest, reply: Fasti
       }
     }
 
-    const requirementNftPointers = getNftPointersFromCampaignRequirement(campaign.requirements)
-    console.log(requirementNftPointers)
+    const requirementNftPointers = getNftPointersFromCampaignRequirement(campaign.requirements);
+    console.log(requirementNftPointers);
 
     // get all ownerships of nfts and oats from wallet address
     const ownerships = await prismaClient.assetOwnership.findMany({
       where: {
         walletAddress: walletAddress,
         pointer: {
-          in: requirementNftPointers
-        }
-      }
-    })
+          in: requirementNftPointers,
+        },
+      },
+    });
 
-    if(ownerships.length !== requirementNftPointers.length){
+    if (ownerships.length !== requirementNftPointers.length) {
       return reply.code(400).send({
         code: 'invalid-ownership',
         error: 'Bad Request',

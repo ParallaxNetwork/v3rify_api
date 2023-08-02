@@ -6,6 +6,7 @@ import { ErrorSchema } from '../../../typebox/common.js';
 import {
   campaignClaimHandler,
   campaignCreateHandler,
+  campaignDeleteHandler,
   campaignGetClaimDetailHandler,
   campaignGetHandler,
   campaignGetTransactionByShopHandler,
@@ -108,6 +109,40 @@ const campaignRoutes: FastifyPluginAsync = async (server) => {
       preHandler: [async (request, reply) => authenticate(request, reply, null)],
     },
     campaignUpdateHandler,
+  );
+
+  server.delete(
+    '/:id',
+    {
+      schema: {
+        params: Type.Object(
+          {
+            id: Type.String({}),
+          },
+          {
+            required: ['id'],
+            description: 'Delete a campaign by its id',
+          },
+        ),
+        response: {
+          200: Type.Object({
+            id: Type.String(),
+          }),
+          400: ErrorSchema,
+        },
+        tags: ['campaign'],
+        summary: 'Delete a campaign by its id',
+        description: 'Delete a campaign by its id',
+        produces: ['application/json'],
+        security: [
+          {
+            apiKey: [],
+          },
+        ],
+      },
+      preHandler: [async (request, reply) => authenticate(request, reply, null)],
+    },
+    campaignDeleteHandler,
   );
 
   server.post(

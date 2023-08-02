@@ -138,10 +138,10 @@ model MerchantCampaignRequirement {
   campaign   MerchantCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
   
   contractAddress String?
-  nftCollection   NftCollection? @relation(fields: [contractAddress], references: [address], onDelete: Cascade)
+  nftCollection   NftCollection? @relation(fields: [contractAddress], references: [address])
   
   galxeCampaignId String?
-  galxeCampaign   GalxeCampaign? @relation(fields: [galxeCampaignId], references: [campaignId], onDelete: Cascade)
+  galxeCampaign   GalxeCampaign? @relation(fields: [galxeCampaignId], references: [campaignId])
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
