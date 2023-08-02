@@ -107,6 +107,7 @@ export const CampaignTransactionResponseSchema = Type.Object({
     name: Type.String(),
     description: Type.String(),
     image: Type.String(),
+    requirements: Type.Array(CampaignRequirementItem),
   }),
   user: Type.Object({
     id: Type.String(),

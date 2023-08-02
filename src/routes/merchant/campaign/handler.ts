@@ -485,6 +485,7 @@ export const campaignGetTransactionByShopHandler = async (request: FastifyReques
           name: true,
           description: true,
           image: true,
+          requirements: true,
         },
       },
       user: {
