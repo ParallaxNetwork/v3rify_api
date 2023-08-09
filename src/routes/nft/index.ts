@@ -38,6 +38,7 @@ const nftRoutes: FastifyPluginAsync = async (server) => {
             image: Type.String(),
             opensea: Type.Any(),
             rarity: Type.Any(),
+            holders: Type.Any(),
           }),
           400: ErrorSchema,
         },

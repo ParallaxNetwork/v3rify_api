@@ -424,7 +424,6 @@ export const campaignClaimHandler = async (request: FastifyRequest, reply: Fasti
     }
 
     const requirementNftPointers = getNftPointersFromCampaignRequirement(campaign.requirements);
-    console.log(requirementNftPointers);
 
     // get all ownerships of nfts and oats from wallet address
     const ownerships = await prismaClient.assetOwnership.findMany({
@@ -436,7 +435,12 @@ export const campaignClaimHandler = async (request: FastifyRequest, reply: Fasti
       },
     });
 
-    if (ownerships.length !== requirementNftPointers.length) {
+    // console.log({
+    //   requirementNftPointers,
+    //   ownerships,
+    // });
+
+    if (ownerships.length === 0) {
       return reply.code(400).send({
         code: 'invalid-ownership',
         error: 'Bad Request',

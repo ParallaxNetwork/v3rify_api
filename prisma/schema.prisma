@@ -197,6 +197,7 @@ model NftCollection {
   image       String?
   opensea     Json
   rarity      Json
+  holders     Json[]
 
   campaignRequirements MerchantCampaignRequirement[]
   nfts                 Nft[]

@@ -1,9 +1,42 @@
 import { FastifyReply, FastifyRequest } from 'fastify';
 import { prismaClient } from '../../prisma/index.js';
 import { alchemyClient } from '../../utils/alchemy/index.js';
-import { generateOwnershipPointer, infuraGetAllNfts, infuraGetAllOwnedNfts, infuraGetAllOwnersOfNft, summarizeNftAttributes } from './helpers.js';
+import {
+  generateOwnershipPointer,
+  infuraGetAllNfts,
+  infuraGetAllOwnedNfts,
+  infuraGetAllOwnersOfNft,
+  summarizeNftAttributes,
+} from './helpers.js';
 import { fetchGalxeCampaign, fetchGalxeProfileOATs } from '../../utils/galxe/graphql.js';
 import { manyMinutesAgo } from '../../utils/dateUtils.js';
+
+const saveNft = async ({ nfts, id, chain }: { nfts: InfuraAssetsModel[]; id: string; chain: 'ethereum' | 'matic' }) => {
+  for (let i = 0; i < nfts.length; i++) {
+    await prismaClient.nft.upsert({
+      create: {
+        tokenId: nfts[i].tokenId,
+        chain: chain,
+        type: nfts[i].type,
+        name: nfts[i].metadata.name,
+        attributes: nfts[i].metadata.attributes,
+        collectionAddress: id.toLowerCase(),
+        owner: nfts[i].owner,
+      },
+      update: {
+        name: nfts[i].metadata.name,
+        attributes: nfts[i].metadata.attributes,
+      },
+      where: {
+        tokenId_chain_collectionAddress: {
+          chain: chain,
+          tokenId: nfts[i].tokenId,
+          collectionAddress: id.toLowerCase(),
+        },
+      },
+    });
+  }
+};
 
 export const nftGetCollectionMetadataHandler = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
@@ -18,17 +51,36 @@ export const nftGetCollectionMetadataHandler = async (request: FastifyRequest, r
       },
     });
 
-    const nftWithOwner = await infuraGetAllOwnersOfNft(id, chain);
-    const collectionAttributesSummary = summarizeNftAttributes(nftWithOwner);
-
-    const allNfts = nftWithOwner
-
     if (existing) {
       // if data is updated within 15 minutes, return existing
       // if (existing.updatedAt > manyMinutesAgo(15)) {
-      // return reply.code(200).send(existing);
+      return reply.code(200).send(existing);
       // }
     }
+
+    const nftWithOwner = await infuraGetAllOwnersOfNft(id, chain);
+    const collectionAttributesSummary = summarizeNftAttributes(nftWithOwner);
+
+    // holders consist of {owner: string, tokenIds: string[]}
+    const holders = [];
+    for (let i = 0; i < nftWithOwner.length; i++) {
+      const owner = nftWithOwner[i].owner;
+      const tokenId = nftWithOwner[i].tokenId;
+      const index = holders.findIndex((holder) => holder.owner === owner);
+      if (index === -1) {
+        holders.push({
+          owner: owner,
+          tokenIds: [tokenId],
+        });
+      } else {
+        holders[index].tokenIds.push(tokenId);
+      }
+    }
+
+    // sort holders by .tokenIds.length
+    holders.sort((a, b) => b.tokenIds.length - a.tokenIds.length);
+
+    const allNfts = nftWithOwner;
 
     const collectionMetadata = await alchemyClient(chain).nft.getContractMetadata(id);
     if (collectionMetadata.tokenType !== 'ERC721' && collectionMetadata.tokenType !== 'ERC1155') {
@@ -41,16 +93,16 @@ export const nftGetCollectionMetadataHandler = async (request: FastifyRequest, r
 
     console.log('collectionMetadata', collectionMetadata);
 
-    try {
-      const collectionAttributesSummaryAlchemy = await alchemyClient(chain).nft.summarizeNftAttributes(id);
-      console.log('collectionAttributesSummaryAlchemy', collectionAttributesSummaryAlchemy);
-    } catch (error) {
-      return reply.code(400).send({
-        code: 'invalid_collection',
-        error: 'Bad Request',
-        message: error,
-      });
-    }
+    // try {
+    //   const collectionAttributesSummaryAlchemy = await alchemyClient(chain).nft.summarizeNftAttributes(id);
+    //   console.log('collectionAttributesSummaryAlchemy', collectionAttributesSummaryAlchemy);
+    // } catch (error) {
+    //   return reply.code(400).send({
+    //     code: 'invalid_collection',
+    //     error: 'Bad Request',
+    //     message: error,
+    //   });
+    // }
 
     // get all nfts
     // const allNfts = await infuraGetAllNfts(id, chain);
@@ -74,6 +126,7 @@ export const nftGetCollectionMetadataHandler = async (request: FastifyRequest, r
         description: collectionMetadata.openSea.description,
         image: collectionMetadata.openSea.imageUrl,
         rarity: { ...collectionAttributesSummary },
+        holders: holders,
       },
       update: {
         name: collectionMetadata.name,
@@ -82,33 +135,15 @@ export const nftGetCollectionMetadataHandler = async (request: FastifyRequest, r
         description: collectionMetadata.openSea.description,
         image: collectionMetadata.openSea.imageUrl,
         rarity: { ...collectionAttributesSummary },
+        holders: holders,
       },
     });
 
-    for (let i = 0; i < allNfts.length; i++) {
-      await prismaClient.nft.upsert({
-        create: {
-          tokenId: allNfts[i].tokenId,
-          chain: chain,
-          type: allNfts[i].type,
-          name: allNfts[i].metadata.name,
-          attributes: allNfts[i].metadata.attributes,
-          collectionAddress: id.toLowerCase(),
-          owner: allNfts[i].owner
-        },
-        update: {
-          name: allNfts[i].metadata.name,
-          attributes: allNfts[i].metadata.attributes,
-        },
-        where: {
-          tokenId_chain_collectionAddress: {
-            chain: chain,
-            tokenId: allNfts[i].tokenId,
-            collectionAddress: id.toLowerCase(),
-          },
-        },
-      });
-    }
+    saveNft({
+      nfts: allNfts,
+      id: id,
+      chain: chain,
+    });
 
     return reply.code(200).send(metadata);
   } catch (error) {
@@ -220,7 +255,6 @@ export const nftGetOwnedNftsHandler = async (request: FastifyRequest, reply: Fas
             type: 'NFT',
             chainId: nft.chainId,
             address: nft.contract,
-            
           }),
           walletAddress: address,
           chainId: nft.chainId,
