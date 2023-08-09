@@ -214,6 +214,7 @@ model Nft {
   type       String  @default("ERC721")
   name       String?
   attributes Json?
+  owner      String?
 
   collectionAddress String
   collection        NftCollection @relation(fields: [collectionAddress], references: [address], onDelete: Cascade)

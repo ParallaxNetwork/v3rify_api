@@ -20,7 +20,7 @@ const nftRoutes: FastifyPluginAsync = async (server) => {
         querystring: Type.Object({
           id: Type.String({
             description: 'The contract address of the nft collection',
-            default: '0xCb2411C2B914b000aD13c86027222A797983EF2D',
+            default: '0x41271EC52685F720422221a2C8FEd5D9784B2285',
           }),
           chain: Type.String({
             description: 'The chain name of the nft collection',

@@ -18,6 +18,7 @@ declare interface InfuraAssetsModel {
   type: string;
   metadata: InfuraMetadataModel;
   chainId?: number;
+  owner?: string;
 }
 
 declare interface InfuraNftModel {
@@ -30,25 +31,27 @@ declare interface InfuraNftModel {
   assets: InfuraAssetsModel[];
 }
 
+declare interface InfuraNftOwnersModel {
+  tokenAddress: string;
+  tokenId: string;
+  amount: string;
+  ownerOf: string;
+  tokenHash: string;
+  blockNumberMinted: string;
+  blockNumber: string;
+  contractType: string;
+  name: string;
+  symbol: string;
+  metadata: InfuraMetadataModel | string
+}
+
 declare interface InfuraOwnersModel {
   total: number;
   pageNumber: number;
   pageSize: number;
   cursor: string | null;
   network: string;
-  owners: {
-    tokenAddress: string;
-    tokenId: string;
-    amount: string;
-    ownerOf: string;
-    tokenHash: string;
-    blockNumberMinted: string;
-    blockNumber: string;
-    contractType: string;
-    name: string;
-    symbol: string;
-    metadata: InfuraMetadataModel;
-  }[];
+  owners: InfuraNftOwnersModel[];
 }
 
 declare interface RarityModel {
@@ -57,18 +60,19 @@ declare interface RarityModel {
     properties: {
       name: string;
       count: number;
+      uniqueOwners: string[]
     }[];
   }[];
   total: number;
 }
 
-declare interface NftPointer { 
-  address: string
-  chainId: number
-  tokenId: string
+declare interface NftPointer {
+  address: string;
+  chainId: number;
+  tokenId: string;
 }
 
 declare interface OatPointer {
-  id: string
-  campaignId: string
+  id: string;
+  campaignId: string;
 }

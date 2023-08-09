@@ -18,12 +18,15 @@ export const nftGetCollectionMetadataHandler = async (request: FastifyRequest, r
       },
     });
 
-    // const test = await infuraGetAllOwnersOfNft(id, chain);
+    const nftWithOwner = await infuraGetAllOwnersOfNft(id, chain);
+    const collectionAttributesSummary = summarizeNftAttributes(nftWithOwner);
+
+    const allNfts = nftWithOwner
 
     if (existing) {
       // if data is updated within 15 minutes, return existing
       // if (existing.updatedAt > manyMinutesAgo(15)) {
-      return reply.code(200).send(existing);
+      // return reply.code(200).send(existing);
       // }
     }
 
@@ -50,8 +53,9 @@ export const nftGetCollectionMetadataHandler = async (request: FastifyRequest, r
     }
 
     // get all nfts
-    const allNfts = await infuraGetAllNfts(id, chain);
-    const collectionAttributesSummary = summarizeNftAttributes(allNfts);
+    // const allNfts = await infuraGetAllNfts(id, chain);
+    // console.log('allNfts', allNfts[0]);
+    // const collectionAttributesSummary = summarizeNftAttributes(allNfts);
 
     const metadata = await prismaClient.nftCollection.upsert({
       where: {
@@ -90,6 +94,7 @@ export const nftGetCollectionMetadataHandler = async (request: FastifyRequest, r
           name: allNfts[i].metadata.name,
           attributes: allNfts[i].metadata.attributes,
           collectionAddress: id.toLowerCase(),
+          owner: allNfts[i].owner
         },
         update: {
           name: allNfts[i].metadata.name,

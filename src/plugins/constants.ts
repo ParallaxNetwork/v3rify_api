@@ -1,6 +1,10 @@
 import { SwaggerOptions } from '@fastify/swagger';
 import { FastifySwaggerUiOptions } from '@fastify/swagger-ui';
 
+const NODE_ENV = process.env.NODE_ENV || 'development';
+
+const schemes = NODE_ENV === 'production' ? ['https'] : ['http'];
+
 const FASTIFY_SWAGGER_PLUGIN_CONFIG: SwaggerOptions = {
   swagger: {
     info: {
@@ -10,7 +14,7 @@ const FASTIFY_SWAGGER_PLUGIN_CONFIG: SwaggerOptions = {
     },
     swagger: '2.2',
     host: `${process.env.BASE_URL}`,
-    schemes: ['https', 'http'],
+    schemes: schemes,
     consumes: ['application/json'],
     produces: ['application/json'],
     tags: [
@@ -53,6 +57,5 @@ const FASTIFY_SWAGGER_UI_PLUGIN_CONFIG: FastifySwaggerUiOptions = {
   },
   transformSpecificationClone: true,
 };
-
 
 export { FASTIFY_SWAGGER_PLUGIN_CONFIG, FASTIFY_SWAGGER_UI_PLUGIN_CONFIG };

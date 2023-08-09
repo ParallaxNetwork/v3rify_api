@@ -55,10 +55,15 @@ export const summarizeNftAttributes = (nfts: InfuraAssetsModel[]): RarityModel =
         rarity.attributes[traitTypeIndex].properties.push({
           name: traitValue,
           count: supply,
+          uniqueOwners: [nft.owner.toLowerCase()]
         });
       } else {
         // if traitValue does exist in rarity.attributes[traitType].properties, increment count
         rarity.attributes[traitTypeIndex].properties[traitValueIndex].count += supply;
+        // add owner to uniqueOwners, if not already there
+        if (!rarity.attributes[traitTypeIndex].properties[traitValueIndex].uniqueOwners.includes(nft.owner.toLowerCase())) {
+          rarity.attributes[traitTypeIndex].properties[traitValueIndex].uniqueOwners.push(nft.owner.toLowerCase());
+        }
       }
     });
 
@@ -115,9 +120,27 @@ export const infuraGetAllOwnedNfts = async (
   }
 };
 
-export const infuraGetAllOwnersOfNft = async (address: string, chain:string): Promise<any> => {
+const convertOwnerNftToAsset = ({
+  data,
+  chainId,
+}: {
+  data: InfuraNftOwnersModel[];
+  chainId: number;
+}): InfuraAssetsModel[] => {
+  return data.map(item => ({
+    contract: item.tokenAddress,
+    tokenId: item.tokenId,
+    supply: item.amount,
+    type: item.contractType,
+    metadata: typeof item.metadata === 'string' ? JSON.parse(item.metadata) : item.metadata,
+    chainId: chainId,
+    owner: item.ownerOf
+  }));
+};
+
+export const infuraGetAllOwnersOfNft = async (address: string, chain: string): Promise<InfuraAssetsModel[]> => {
   try {
-    const owners = [];
+    const owners: InfuraNftOwnersModel[] = [];
     let cursor = null;
 
     do {
@@ -133,21 +156,24 @@ export const infuraGetAllOwnersOfNft = async (address: string, chain:string): Pr
 
     // make owners.metadata JSON.parse
     owners.forEach((owner) => {
-      owner.metadata = JSON.parse(owner.metadata);
+      owner.metadata = JSON.parse(owner.metadata as string);
     });
 
-    console.log(owners);
-
-    return owners;
+    const converted = convertOwnerNftToAsset({
+      data: owners,
+      chainId: convertChainStringToId(chain),
+    })
+    
+    return converted;
   } catch (error) {
     console.log(error);
   }
-}
+};
 
 export const generateOwnershipPointer = (params: OwnershipPointerParams): string => {
   if (params.type === 'NFT') {
     return `NFT-${params.chainId}-${params.address}`;
-  }else if(params.type === 'OAT'){
-    return `OAT-${params.campaignId}`
+  } else if (params.type === 'OAT') {
+    return `OAT-${params.campaignId}`;
   }
 };
