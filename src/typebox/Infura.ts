@@ -11,7 +11,8 @@ const InfuraMetadataModelType = Type.Object({
   image: Type.String(),
   animation_url: Type.Optional(Type.String()),
   external_url: Type.Optional(Type.String()),
-  attributes: Type.Optional(Type.Array(InfuraAttributesModelType)),
+  // attributes: Type.Optional(Type.Array(InfuraAttributesModelType)),
+  attributes: Type.Optional(Type.Any()),
 });
 
 const InfuraAssetsModelType = Type.Object({

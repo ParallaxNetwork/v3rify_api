@@ -103,7 +103,7 @@ export const infuraGetAllOwnedNfts = async (
     });
 
     // filters out if nft.metadata is null
-    const filteredNfts = nfts.filter(
+    let filteredNfts = nfts.filter(
       (nft) =>
         nft.contract &&
         nft.tokenId &&
@@ -113,6 +113,13 @@ export const infuraGetAllOwnedNfts = async (
         nft.metadata.name &&
         nft.metadata.image,
     );
+
+    // filter, if chainId is 137 (Polygon), and tokenId is too long (more than 12 digits), then remove
+    if (chainId === 137) {
+      filteredNfts = filteredNfts.filter((nft) => nft.tokenId.length <= 12);
+    }
+
+    // console.log("FILTERED NFTS: ", filteredNfts);
 
     return filteredNfts;
   } catch (error) {
