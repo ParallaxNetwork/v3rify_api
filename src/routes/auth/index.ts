@@ -3,6 +3,7 @@ import { FastifyPluginAsync, FastifyReply, FastifyRequest } from 'fastify';
 import validator from 'validator';
 
 import {
+  merchantChangePasswordHandler,
   merchantCheckUsernameHandler,
   merchantEditAccountInfoHandler,
   merchantMeHandler,
@@ -379,6 +380,41 @@ const authRoutes: FastifyPluginAsync = async (server) => {
       ],
     },
     merchantEditAccountInfoHandler,
+  );
+
+  server.put(
+    '/merchant/change-password',
+    {
+      schema: {
+        body: Type.Object(
+          {
+            // newPassword: Type.String({
+            //   description: 'The new password of the merchant',
+            //   default: 'testing_merchant_password',
+            // }),
+            newPassword: Type.String({
+              description: 'The new password of the merchant',
+              default: 'testing_merchant_password',
+              minLength: 8,
+            }),
+          },
+          {
+            required: ['newPassword'],
+          },
+        ),
+        response: {
+          200: Type.String(),
+          401: ErrorSchema,
+        },
+        tags: ['auth'],
+        summary: 'Change password',
+        description: 'Change password (username login only)',
+        produces: ['application/json'],
+        security: [{ apiKey: [] }],
+      },
+      preHandler: [async (request, reply) => authenticate(request, reply, null)],
+    },
+    merchantChangePasswordHandler,
   );
 };
 

@@ -39,7 +39,7 @@ export const userWalletLoginHandler = async (request: FastifyRequest, reply: Fas
       });
 
       if (!existingUser) {
-        console.log('User does not exist')
+        console.log('User does not exist');
         // Create user
         const user = await prismaClient.user.create({
           data: {
@@ -55,7 +55,7 @@ export const userWalletLoginHandler = async (request: FastifyRequest, reply: Fas
           type: 'wallet',
         });
       } else {
-        console.log('User exists')
+        console.log('User exists');
         const token = await generateUserToken(existingUser);
 
         return reply.code(200).send({
@@ -330,4 +330,38 @@ export const merchantEditAccountInfoHandler = async (request: FastifyRequest, re
       message: error,
     });
   }
+};
+
+export const merchantChangePasswordHandler = async (request: FastifyRequest, reply: FastifyReply) => {
+  const { newPassword } = request.body as {
+    newPassword: string;
+  };
+  const { id: userId } = request.user;
+
+  const merchant = await prismaClient.merchant.findUnique({
+    where: {
+      id: userId,
+    },
+  });
+
+  if(merchant.type !== 'username'){
+    return reply.code(400).send({
+      code: 'invalid-type',
+      error: 'invalid-type',
+      message: 'Invalid account type, must be username',
+    });
+  }
+
+  const passwordHash = await bcrypt.hash(newPassword, 10);
+
+  await prismaClient.merchant.update({
+    where: {
+      id: userId,
+    },
+    data: {
+      passwordHash: passwordHash,
+    },
+  });
+
+  return reply.code(200).send('Password changed successfully');
 };
