@@ -392,6 +392,10 @@ const authRoutes: FastifyPluginAsync = async (server) => {
             //   description: 'The new password of the merchant',
             //   default: 'testing_merchant_password',
             // }),
+            oldPassword: Type.String({
+              description: 'The old password of the merchant',
+              default: 'testing_merchant_password',
+            }),
             newPassword: Type.String({
               description: 'The new password of the merchant',
               default: 'testing_merchant_password',

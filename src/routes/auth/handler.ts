@@ -333,7 +333,8 @@ export const merchantEditAccountInfoHandler = async (request: FastifyRequest, re
 };
 
 export const merchantChangePasswordHandler = async (request: FastifyRequest, reply: FastifyReply) => {
-  const { newPassword } = request.body as {
+  const { oldPassword, newPassword } = request.body as {
+    oldPassword: string;
     newPassword: string;
   };
   const { id: userId } = request.user;
@@ -344,11 +345,27 @@ export const merchantChangePasswordHandler = async (request: FastifyRequest, rep
     },
   });
 
-  if(merchant.type !== 'username'){
+  if (merchant.type !== 'username') {
     return reply.code(400).send({
       code: 'invalid-type',
       error: 'invalid-type',
       message: 'Invalid account type, must be username',
+    });
+  }
+
+  console.log({
+    oldPassword,
+    newPassword,
+  })
+
+  // Check if old password is correct
+  const oldPasswordHash = await bcrypt.hash(oldPassword, 10);
+
+  if (bcrypt.compareSync(oldPassword, merchant.passwordHash as string) === false) {
+    return reply.code(400).send({
+      code: 'invalid-password',
+      error: 'invalid-password',
+      message: `Invalid password`,
     });
   }
 
