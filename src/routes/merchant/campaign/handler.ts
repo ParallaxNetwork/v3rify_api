@@ -1,6 +1,7 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
+import add from 'date-fns/add';
 import { prismaClient } from '../../../prisma/index.js';
-import { unixToDate } from '../../../utils/dateUtils.js';
+import { manyMinutesAgo, unixToDate } from '../../../utils/dateUtils.js';
 import { getNftPointersFromCampaignRequirement } from './helpers.js';
 import { Prisma } from '@prisma/client';
 
@@ -365,63 +366,63 @@ export const campaignClaimHandler = async (request: FastifyRequest, reply: Fasti
     });
 
     // check campaign quota and user quota
-    if (campaign.totalQuota !== 0 || campaign.perUserQuota !== 0 || campaign.perUserDailyQuota !== 0) {
-      const currentUsageCount = await prismaClient.merchantCampaignUsage.count({
-        where: {
-          campaignId: campaignId,
-        },
-      });
+    // if (campaign.totalQuota !== 0 || campaign.perUserQuota !== 0 || campaign.perUserDailyQuota !== 0) {
+    //   const currentUsageCount = await prismaClient.merchantCampaignUsage.count({
+    //     where: {
+    //       campaignId: campaignId,
+    //     },
+    //   });
 
-      if (campaign.totalQuota !== 0) {
-        if (currentUsageCount >= campaign.totalQuota) {
-          console.log('quota exceeded');
-          return reply.code(400).send({
-            code: 'quota-exceeded',
-            error: 'Bad Request',
-            message: 'All quota for this campaign has been claimed',
-          });
-        }
-      }
+    //   if (campaign.totalQuota !== 0) {
+    //     if (currentUsageCount >= campaign.totalQuota) {
+    //       console.log('quota exceeded');
+    //       return reply.code(400).send({
+    //         code: 'quota-exceeded',
+    //         error: 'Bad Request',
+    //         message: 'All quota for this campaign has been claimed',
+    //       });
+    //     }
+    //   }
 
-      if (campaign.perUserQuota !== 0) {
-        const userUsageCount = await prismaClient.merchantCampaignUsage.count({
-          where: {
-            userId: request.user.id,
-            campaignId: campaignId,
-          },
-        });
+    //   if (campaign.perUserQuota !== 0) {
+    //     const userUsageCount = await prismaClient.merchantCampaignUsage.count({
+    //       where: {
+    //         userId: request.user.id,
+    //         campaignId: campaignId,
+    //       },
+    //     });
 
-        if (userUsageCount >= campaign.perUserQuota) {
-          console.log('quota exceeded');
-          return reply.code(400).send({
-            code: 'quota-exceeded',
-            error: 'Bad Request',
-            message: `Your quota exceeded for this campaign, you can only claim ${campaign.perUserQuota} times`,
-          });
-        }
-      }
+    //     if (userUsageCount >= campaign.perUserQuota) {
+    //       console.log('quota exceeded');
+    //       return reply.code(400).send({
+    //         code: 'quota-exceeded',
+    //         error: 'Bad Request',
+    //         message: `Your quota exceeded for this campaign, you can only claim ${campaign.perUserQuota} times`,
+    //       });
+    //     }
+    //   }
 
-      if (campaign.perUserDailyQuota !== 0) {
-        const userUsageCount = await prismaClient.merchantCampaignUsage.count({
-          where: {
-            userId: request.user.id,
-            campaignId: campaignId,
-            createdAt: {
-              gte: new Date(new Date().setHours(0, 0, 0, 0)),
-            },
-          },
-        });
+    //   if (campaign.perUserDailyQuota !== 0) {
+    //     const userUsageCount = await prismaClient.merchantCampaignUsage.count({
+    //       where: {
+    //         userId: request.user.id,
+    //         campaignId: campaignId,
+    //         createdAt: {
+    //           gte: new Date(new Date().setHours(0, 0, 0, 0)),
+    //         },
+    //       },
+    //     });
 
-        if (userUsageCount >= campaign.perUserDailyQuota) {
-          console.log('quota exceeded');
-          return reply.code(400).send({
-            code: 'quota-exceeded',
-            error: 'Bad Request',
-            message: `Your daily quota exceeded for this campaign, you can only claim ${campaign.perUserDailyQuota} times per day`,
-          });
-        }
-      }
-    }
+    //     if (userUsageCount >= campaign.perUserDailyQuota) {
+    //       console.log('quota exceeded');
+    //       return reply.code(400).send({
+    //         code: 'quota-exceeded',
+    //         error: 'Bad Request',
+    //         message: `Your daily quota exceeded for this campaign, you can only claim ${campaign.perUserDailyQuota} times per day`,
+    //       });
+    //     }
+    //   }
+    // }
 
     const requirementNftPointers = getNftPointersFromCampaignRequirement(campaign.requirements);
 
@@ -448,10 +449,16 @@ export const campaignClaimHandler = async (request: FastifyRequest, reply: Fasti
       });
     }
 
+    // expiredAT, 5 minutes from now
+    const expiredAt = new Date(new Date().getTime() + 5 * 60 * 1000);
+
+    console.log(expiredAt)
+
     const usage = await prismaClient.merchantCampaignUsage.create({
       data: {
         campaignId: campaignId,
         userId: request.user.id,
+        expiredAt: expiredAt
       },
     });
 
@@ -491,6 +498,14 @@ export const campaignGetClaimDetailHandler = async (request: FastifyRequest, rep
         message: 'You are not allowed to view this claim detail',
       });
     }
+
+    // if(usage.createdAt < manyMinutesAgo(5)){
+    //   return reply.code(400).send({
+    //     code: 'invalid-claim',
+    //     error: 'Bad Request',
+    //     message: 'Claim is expired',
+    //   });
+    // }
 
     return reply.code(200).send(usage);
   } catch (error) {

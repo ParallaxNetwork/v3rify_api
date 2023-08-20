@@ -353,14 +353,7 @@ export const merchantChangePasswordHandler = async (request: FastifyRequest, rep
     });
   }
 
-  console.log({
-    oldPassword,
-    newPassword,
-  })
-
   // Check if old password is correct
-  const oldPasswordHash = await bcrypt.hash(oldPassword, 10);
-
   if (bcrypt.compareSync(oldPassword, merchant.passwordHash as string) === false) {
     return reply.code(400).send({
       code: 'invalid-password',

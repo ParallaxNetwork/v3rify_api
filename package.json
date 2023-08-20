@@ -51,6 +51,7 @@
     "ajv": "^8.11.2",
     "alchemy-sdk": "^2.9.2",
     "bcrypt": "^5.1.0",
+    "date-fns": "^2.30.0",
     "dotenv": "^16.0.3",
     "env-schema": "^5.1.1",
     "fabric": "^5.3.0",

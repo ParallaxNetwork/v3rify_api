@@ -175,6 +175,7 @@ model MerchantCampaignBenefit {
 model MerchantCampaignUsage {
   id String @id @default(uuid())
 
+  expiredAt DateTime
   // nftUsages       NftUsage[]
 
   campaignId String

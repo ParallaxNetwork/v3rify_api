@@ -81,6 +81,7 @@ export const ClaimResponseSchema = Type.Object({
   userId: Type.String(),
   campaignId: Type.String(),
   createdAt: Type.String(),
+  expiredAt: Type.String(),
   updatedAt: Type.String(),
   campaign: Type.Object({
     name: Type.String(),
