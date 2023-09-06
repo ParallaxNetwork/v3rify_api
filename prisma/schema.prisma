@@ -106,26 +106,6 @@ model MerchantCampaign {
   updatedAt DateTime @updatedAt
 }
 
-// model MerchantCampaignRequirement {
-//   id               String                            @id @default(uuid())
-//   network          String                            @default("ethereum")
-//   minimumHold      Int                               @default(1)
-//   customConditions MerchantCampaignCustomCondition[]
-//   type             String                            @default("NFT") // can be "NFT" | "OAT"
-
-//   campaignId String
-//   campaign   MerchantCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
-
-//   contractAddress String?
-//   nftCollection   NftCollection? @relation(fields: [contractAddress], references: [address], onDelete: Cascade)
-
-//   // galxeCampaignId String?
-//   // galxeCampaign   GalxeCampaign? @relation(fields: [galxeCampaignId], references: [id], onDelete: Cascade)
-
-//   createdAt DateTime @default(now())
-//   updatedAt DateTime @updatedAt
-// }
-
 model MerchantCampaignRequirement {
   id               String                            @id @default(uuid())
   network          String                            @default("ethereum")
