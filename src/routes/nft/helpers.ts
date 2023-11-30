@@ -211,7 +211,11 @@ export const alchemyGetAllOwnedNfts = async (
     // add chainId to each nft
     nfts.forEach((nft) => {
       nft.chainId = chainId;
-      nft.supply = nft.contract.totalSupply;
+      // adjust nft to fit InfuraAssetsModel
+      nft.supply = nft.contract.totalSupply || null;
+      nft.type = nft.tokenType;
+      nft.metadata = nft.rawMetadata;
+      (nft.contract as any) = nft.contract.address;
     });
 
     // filters out if nft.metadata is null
@@ -220,10 +224,10 @@ export const alchemyGetAllOwnedNfts = async (
         nft.contract &&
         nft.tokenId &&
         nft.tokenType &&
-        nft.rawMetadata &&
-        nft.rawMetadata.name &&
-        nft.rawMetadata.name &&
-        nft.rawMetadata.image,
+        nft.metadata &&
+        nft.metadata.name &&
+        nft.metadata.name &&
+        nft.metadata.image,
     );
 
     if (chainId === 137) {

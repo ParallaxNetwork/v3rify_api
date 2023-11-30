@@ -43,7 +43,12 @@ declare interface AlchemyContractModel {
   deployedBlockNumber: number;
 }
 
-declare type AlchemyAssetsModel = OwnedNft & { chainId?: number; supply?: string };
+declare type AlchemyAssetsModel = OwnedNft & {
+  chainId?: number;
+  supply?: string;
+  type?: string;
+  metadata?: OwnedNft['rawMetadata'];
+};
 
 declare interface AlchemyOwnedNftModel {
   network: string;
