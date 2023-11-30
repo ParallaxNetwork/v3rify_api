@@ -14,7 +14,7 @@ export const alchemyGetOwnedNfts = async (
   const data: AlchemyOwnedNftModel = {
     assets: res.ownedNfts as any,
     account: address,
-    pageKey,
+    pageKey: res.pageKey,
     network: chain,
     total: res.totalCount,
   };
