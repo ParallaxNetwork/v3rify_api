@@ -1,5 +1,7 @@
+import { alchemyGetOwnedNfts } from 'utils/alchemy/alcemyNft.js';
 import { infuraGetNftsFromCollection, infuraGetOwnedNfts, infuraGetOwnersOfNft } from '../../utils/infura/infuraNft.js';
 import { convertChainStringToId } from '../../utils/miscUtils.js';
+import { AlchemyAssetsModel } from 'types/Alchemy.js';
 
 export const infuraGetAllNfts = async (address: string, chain: string): Promise<InfuraAssetsModel[]> => {
   try {
@@ -55,13 +57,15 @@ export const summarizeNftAttributes = (nfts: InfuraAssetsModel[]): RarityModel =
         rarity.attributes[traitTypeIndex].properties.push({
           name: traitValue,
           count: supply,
-          uniqueOwners: [nft.owner.toLowerCase()]
+          uniqueOwners: [nft.owner.toLowerCase()],
         });
       } else {
         // if traitValue does exist in rarity.attributes[traitType].properties, increment count
         rarity.attributes[traitTypeIndex].properties[traitValueIndex].count += supply;
         // add owner to uniqueOwners, if not already there
-        if (!rarity.attributes[traitTypeIndex].properties[traitValueIndex].uniqueOwners.includes(nft.owner.toLowerCase())) {
+        if (
+          !rarity.attributes[traitTypeIndex].properties[traitValueIndex].uniqueOwners.includes(nft.owner.toLowerCase())
+        ) {
           rarity.attributes[traitTypeIndex].properties[traitValueIndex].uniqueOwners.push(nft.owner.toLowerCase());
         }
       }
@@ -134,14 +138,14 @@ const convertOwnerNftToAsset = ({
   data: InfuraNftOwnersModel[];
   chainId: number;
 }): InfuraAssetsModel[] => {
-  return data.map(item => ({
+  return data.map((item) => ({
     contract: item.tokenAddress,
     tokenId: item.tokenId,
     supply: item.amount,
     type: item.contractType,
     metadata: typeof item.metadata === 'string' ? JSON.parse(item.metadata) : item.metadata,
     chainId: chainId,
-    owner: item.ownerOf
+    owner: item.ownerOf,
   }));
 };
 
@@ -169,8 +173,8 @@ export const infuraGetAllOwnersOfNft = async (address: string, chain: string): P
     const converted = convertOwnerNftToAsset({
       data: owners,
       chainId: convertChainStringToId(chain),
-    })
-    
+    });
+
     return converted;
   } catch (error) {
     console.log(error);
@@ -182,5 +186,52 @@ export const generateOwnershipPointer = (params: OwnershipPointerParams): string
     return `NFT-${params.chainId}-${params.address}`;
   } else if (params.type === 'OAT') {
     return `OAT-${params.campaignId}`;
+  }
+};
+
+export const alchemyGetAllOwnedNfts = async (
+  address: string,
+  chainId: number,
+  tokenAddresses?: string[],
+): Promise<AlchemyAssetsModel[]> => {
+  try {
+    const nfts = [] as AlchemyAssetsModel[];
+    let pageKey = undefined;
+
+    do {
+      const response = await alchemyGetOwnedNfts(chainId, address, pageKey, tokenAddresses);
+      const { assets, pageKey: newPageKey } = response;
+
+      nfts.push(...assets);
+      pageKey = newPageKey;
+
+      console.log(`Fetched ${nfts.length} nfts in total`);
+    } while (pageKey !== undefined);
+
+    // add chainId to each nft
+    nfts.forEach((nft) => {
+      nft.chainId = chainId;
+      nft.supply = nft.contract.totalSupply;
+    });
+
+    // filters out if nft.metadata is null
+    let filteredNfts = nfts.filter(
+      (nft) =>
+        nft.contract &&
+        nft.tokenId &&
+        nft.tokenType &&
+        nft.rawMetadata &&
+        nft.rawMetadata.name &&
+        nft.rawMetadata.name &&
+        nft.rawMetadata.image,
+    );
+
+    if (chainId === 137) {
+      filteredNfts = filteredNfts.filter((nft) => nft.tokenId.length <= 12);
+    }
+
+    return filteredNfts;
+  } catch (error) {
+    console.log(error);
   }
 };

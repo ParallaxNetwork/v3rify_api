@@ -2,6 +2,7 @@ import { FastifyReply, FastifyRequest } from 'fastify';
 import { prismaClient } from '../../prisma/index.js';
 import { alchemyClient } from '../../utils/alchemy/index.js';
 import {
+  alchemyGetAllOwnedNfts,
   generateOwnershipPointer,
   infuraGetAllNfts,
   infuraGetAllOwnedNfts,
@@ -10,6 +11,7 @@ import {
 } from './helpers.js';
 import { fetchGalxeCampaign, fetchGalxeProfileOATs } from '../../utils/galxe/graphql.js';
 import { manyMinutesAgo } from '../../utils/dateUtils.js';
+import { AlchemyOwnedNftModel } from 'types/Alchemy.js';
 
 const saveNft = async ({ nfts, id, chain }: { nfts: InfuraAssetsModel[]; id: string; chain: 'ethereum' | 'matic' }) => {
   for (let i = 0; i < nfts.length; i++) {
@@ -229,12 +231,12 @@ export const nftGetOwnedNftsHandler = async (request: FastifyRequest, reply: Fas
     const { id } = request.user as { id: string };
     const { address } = request.query as { address: string };
 
-    const ownedNfts: InfuraAssetsModel[] = [];
+    const ownedNfts: AlchemyOwnedNftModel['assets'] = [];
 
     const chainIds = [1, 137];
 
     for (let i = 0; i < chainIds.length; i++) {
-      const nfts = await infuraGetAllOwnedNfts(address, chainIds[i]);
+      const nfts = await alchemyGetAllOwnedNfts(address, chainIds[i]);
       ownedNfts.push(...nfts);
     }
 
@@ -254,7 +256,7 @@ export const nftGetOwnedNftsHandler = async (request: FastifyRequest, reply: Fas
           pointer: generateOwnershipPointer({
             type: 'NFT',
             chainId: nft.chainId,
-            address: nft.contract,
+            address: nft.contract.address,
           }),
           walletAddress: address,
           chainId: nft.chainId,
