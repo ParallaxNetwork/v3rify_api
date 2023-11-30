@@ -1,5 +1,5 @@
-import { alchemyClient } from '.';
 import { AlchemyOwnedNftModel } from 'types/Alchemy';
+import { alchemyClient } from './index.js';
 
 export const alchemyGetOwnedNfts = async (
   chainId: number,

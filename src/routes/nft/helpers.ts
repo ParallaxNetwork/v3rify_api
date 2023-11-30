@@ -1,7 +1,7 @@
-import { alchemyGetOwnedNfts } from 'utils/alchemy/alcemyNft.js';
+import { AlchemyAssetsModel } from 'types/Alchemy.js';
+import { alchemyGetOwnedNfts } from '../../utils/alchemy/alcemyNft.js';
 import { infuraGetNftsFromCollection, infuraGetOwnedNfts, infuraGetOwnersOfNft } from '../../utils/infura/infuraNft.js';
 import { convertChainStringToId } from '../../utils/miscUtils.js';
-import { AlchemyAssetsModel } from 'types/Alchemy.js';
 
 export const infuraGetAllNfts = async (address: string, chain: string): Promise<InfuraAssetsModel[]> => {
   try {
