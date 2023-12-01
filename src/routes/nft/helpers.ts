@@ -1,5 +1,5 @@
 import { AlchemyAssetsModel } from 'types/Alchemy.js';
-import { alchemyGetOwnedNfts } from '../../utils/alchemy/alcemyNft.js';
+import { alchemyGetOwnedNfts, alchemyGetOwnersOfNft } from '../../utils/alchemy/alcemyNft.js';
 import { infuraGetNftsFromCollection, infuraGetOwnedNfts, infuraGetOwnersOfNft } from '../../utils/infura/infuraNft.js';
 import { convertChainStringToId } from '../../utils/miscUtils.js';
 
@@ -35,7 +35,7 @@ export const summarizeNftAttributes = (nfts: InfuraAssetsModel[]): RarityModel =
     const nft = nfts[i];
     const supply = parseInt(nft.supply);
 
-    nft.metadata?.attributes.forEach((attribute) => {
+    nft.metadata?.attributes?.forEach((attribute) => {
       const traitType = attribute.trait_type;
       const traitValue = attribute.value;
 
@@ -235,6 +235,63 @@ export const alchemyGetAllOwnedNfts = async (
     }
 
     return filteredNfts;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+export const alchemyGetAllOwnersOfNft = async (address: string, chain: string): Promise<InfuraAssetsModel[]> => {
+  try {
+    // get owners
+    const owners: string[] = [];
+    let pageKey = null;
+    do {
+      const response = await alchemyGetOwnersOfNft(convertChainStringToId(chain), address, pageKey);
+      const { owners: newOwners, pageKey: newPageKey } = response;
+
+      owners.push(...newOwners);
+      pageKey = newPageKey ?? null;
+
+      console.log(`Fetched ${owners.length} owners in total`);
+    } while (pageKey !== null);
+
+    // get assets for each owner
+    const ownersWithAsset: InfuraNftOwnersModel[] = [];
+    let oi = 0;
+    let pageKeyOi = null;
+    do {
+      const ownerAddr = owners[oi];
+      const nftsForOwner = await alchemyGetOwnedNfts(convertChainStringToId(chain), address, pageKeyOi);
+      const { assets, pageKey: newPageKeyOi, total } = nftsForOwner;
+
+      assets.forEach((item) => {
+        ownersWithAsset.push({
+          tokenAddress: item.contract.address,
+          tokenId: item.tokenId,
+          amount: item.contract.totalSupply || null,
+          contractType: item.contract.tokenType,
+          ownerOf: ownerAddr,
+          metadata: typeof item.rawMetadata === 'string' ? JSON.parse(item.rawMetadata) : item.rawMetadata,
+          blockNumber: `${item.contract.deployedBlockNumber}`,
+          blockNumberMinted: null,
+          name: item.contract.name,
+          symbol: item.contract.symbol,
+          tokenHash: null,
+        });
+      });
+
+      pageKeyOi = newPageKeyOi ?? null;
+      oi++;
+
+      console.log(`Fetched ${total} nfts for owner ${ownerAddr}`);
+    } while (pageKeyOi !== null);
+
+    const converted = convertOwnerNftToAsset({
+      data: ownersWithAsset,
+      chainId: convertChainStringToId(chain),
+    });
+
+    return converted;
   } catch (error) {
     console.log(error);
   }

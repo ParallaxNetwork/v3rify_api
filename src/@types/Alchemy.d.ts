@@ -57,3 +57,11 @@ declare interface AlchemyOwnedNftModel {
   pageKey: OwnedNftsResponse['pageKey'];
   assets: AlchemyAssetsModel[];
 }
+
+declare interface AlchemyNftOwnersModel {
+  ownerAddress: string;
+  tokenBalances: {
+    tokenId: string;
+    balance: number;
+  }[];
+}

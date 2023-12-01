@@ -3,6 +3,7 @@ import { prismaClient } from '../../prisma/index.js';
 import { alchemyClient } from '../../utils/alchemy/index.js';
 import {
   alchemyGetAllOwnedNfts,
+  alchemyGetAllOwnersOfNft,
   generateOwnershipPointer,
   infuraGetAllNfts,
   infuraGetAllOwnedNfts,
@@ -60,7 +61,7 @@ export const nftGetCollectionMetadataHandler = async (request: FastifyRequest, r
       // }
     }
 
-    const nftWithOwner = await infuraGetAllOwnersOfNft(id, chain);
+    const nftWithOwner = await alchemyGetAllOwnersOfNft(id, chain);
     const collectionAttributesSummary = summarizeNftAttributes(nftWithOwner);
 
     // holders consist of {owner: string, tokenIds: string[]}
@@ -110,6 +111,10 @@ export const nftGetCollectionMetadataHandler = async (request: FastifyRequest, r
     // const allNfts = await infuraGetAllNfts(id, chain);
     // console.log('allNfts', allNfts[0]);
     // const collectionAttributesSummary = summarizeNftAttributes(allNfts);
+
+    // default to empty for the required string fields
+    collectionMetadata.name = collectionMetadata.name ?? '';
+    collectionMetadata.symbol = collectionMetadata.symbol ?? '';
 
     const metadata = await prismaClient.nftCollection.upsert({
       where: {
