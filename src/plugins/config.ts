@@ -23,7 +23,7 @@ export enum NodeEnv {
 export enum BackendMode {
   api = 'api',
   worker = 'worker',
-  both = 'both'
+  both = 'both',
 }
 
 const ConfigSchema = Type.Strict(
@@ -42,8 +42,6 @@ const ConfigSchema = Type.Strict(
     S3_BUCKET_REGION: Type.String(),
     // API Key
     ALCHEMY_API_KEY: Type.String(),
-    INFURA_API_KEY: Type.String(),
-    INFURA_API_SECRET: Type.String(),
   }),
 );
 
@@ -64,16 +62,16 @@ const configPlugin: FastifyPluginAsync = async (server) => {
     throw new Error('.env file validation failed - ' + JSON.stringify(validate.errors, null, 2));
   }
 
-  if(process.env.BACKEND_MODE === BackendMode.api || process.env.BACKEND_MODE === BackendMode.both){
+  if (process.env.BACKEND_MODE === BackendMode.api || process.env.BACKEND_MODE === BackendMode.both) {
     await server.register(fastifyCors, {
       origin: '*',
       methods: ['GET', 'POST', 'PUT', 'DELETE'],
       allowedHeaders: ['Content-Type', 'Authorization'],
       credentials: true,
     });
-  
+
     await server.register(fastifyFormbody);
-  
+
     await server.register(fastifyHelmet, {
       contentSecurityPolicy: {
         directives: {
@@ -82,14 +80,14 @@ const configPlugin: FastifyPluginAsync = async (server) => {
         },
       },
     });
-  
+
     await server.register(fastifyMultipart, {
       limits: {
         fileSize: 1024 * 1024 * 10,
       },
-      attachFieldsToBody: true
+      attachFieldsToBody: true,
     });
-  
+
     await server.register(fastifySwagger, FASTIFY_SWAGGER_PLUGIN_CONFIG);
     await server.register(fastifySwaggerUi, FASTIFY_SWAGGER_UI_PLUGIN_CONFIG);
   }

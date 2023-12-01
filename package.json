@@ -42,7 +42,6 @@
     "@fastify/swagger": "^8.6.0",
     "@fastify/swagger-ui": "^1.9.2",
     "@fastify/type-provider-typebox": "^3.2.0",
-    "@infura/sdk": "^2.4.3",
     "@prisma/client": "^4.16.2",
     "@sinclair/typebox": "^0.28.20",
     "@thirdweb-dev/storage": "^1.1.9",

@@ -7,8 +7,13 @@ import { authenticate } from '../../middleware/auth.js';
 import { alchemyClient } from '../../utils/alchemy/index.js';
 import { prismaClient } from '../../prisma/index.js';
 import { manyMinutesAgo } from '../../utils/dateUtils.js';
-import { infuraGetAllNfts, summarizeNftAttributes } from './helpers.js';
-import { nftGetCollectionMetadataHandler, nftGetOATMetadataHandler, nftGetOwnedNftsHandler, nftGetOwnerOatsHandler } from './handler.js';
+import { summarizeNftAttributes } from './helpers.js';
+import {
+  nftGetCollectionMetadataHandler,
+  nftGetOATMetadataHandler,
+  nftGetOwnedNftsHandler,
+  nftGetOwnerOatsHandler,
+} from './handler.js';
 import { InfuraAssetsModelType } from '../../typebox/Infura.js';
 import { GalxeCampaignType, GalxeOATItemType } from '../../typebox/Galxe.js';
 
@@ -77,7 +82,7 @@ const nftRoutes: FastifyPluginAsync = async (server) => {
         },
       ],
     },
-    nftGetCollectionMetadataHandler
+    nftGetCollectionMetadataHandler,
   );
 
   server.get(
@@ -106,8 +111,8 @@ const nftRoutes: FastifyPluginAsync = async (server) => {
       },
       preHandler: [async (request, reply) => authenticate(request, reply, null)],
     },
-    nftGetOATMetadataHandler
-  )
+    nftGetOATMetadataHandler,
+  );
 
   server.get(
     '/owned-nfts',
@@ -117,7 +122,7 @@ const nftRoutes: FastifyPluginAsync = async (server) => {
           address: Type.String({
             description: 'The address of the wallet',
             default: '0x278A2d5B5C8696882d1D2002cE107efc74704ECf',
-          })
+          }),
         }),
         response: {
           200: Type.Array(InfuraAssetsModelType),
@@ -146,11 +151,11 @@ const nftRoutes: FastifyPluginAsync = async (server) => {
               message: 'Invalid address',
             });
           }
-        }
-      ]
+        },
+      ],
     },
-    nftGetOwnedNftsHandler
-  )
+    nftGetOwnedNftsHandler,
+  );
 
   server.get(
     '/owned-oats',
@@ -160,7 +165,7 @@ const nftRoutes: FastifyPluginAsync = async (server) => {
           address: Type.String({
             description: 'The address of the wallet',
             default: '0x278A2d5B5C8696882d1D2002cE107efc74704ECf',
-          })
+          }),
         }),
         response: {
           200: Type.Array(GalxeOATItemType),
@@ -189,11 +194,11 @@ const nftRoutes: FastifyPluginAsync = async (server) => {
               message: 'Invalid address',
             });
           }
-        }
-      ]
+        },
+      ],
     },
-    nftGetOwnerOatsHandler
-  )
+    nftGetOwnerOatsHandler,
+  );
 };
 
 export default nftRoutes;

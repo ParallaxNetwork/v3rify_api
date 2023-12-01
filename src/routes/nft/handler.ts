@@ -5,9 +5,6 @@ import {
   alchemyGetAllOwnedNfts,
   alchemyGetAllOwnersOfNft,
   generateOwnershipPointer,
-  infuraGetAllNfts,
-  infuraGetAllOwnedNfts,
-  infuraGetAllOwnersOfNft,
   summarizeNftAttributes,
 } from './helpers.js';
 import { fetchGalxeCampaign, fetchGalxeProfileOATs } from '../../utils/galxe/graphql.js';
@@ -106,11 +103,6 @@ export const nftGetCollectionMetadataHandler = async (request: FastifyRequest, r
     //     message: error,
     //   });
     // }
-
-    // get all nfts
-    // const allNfts = await infuraGetAllNfts(id, chain);
-    // console.log('allNfts', allNfts[0]);
-    // const collectionAttributesSummary = summarizeNftAttributes(allNfts);
 
     // default to empty for the required string fields
     collectionMetadata.name = collectionMetadata.name ?? '';
